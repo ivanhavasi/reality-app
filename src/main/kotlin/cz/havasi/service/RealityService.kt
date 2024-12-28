@@ -24,14 +24,25 @@ internal class RealityService(
     }
 
     private suspend fun fetchAndSaveApartmentsForProvider(provider: EstatesProvider) {
-        val apartments = provider.getEstates(GetEstatesCommand(
-            type = BuildingType.APARTMENT,
-            transaction = TransactionType.SALE,
-        ))
+        val apartments = provider.getEstates(
+            GetEstatesCommand(
+                type = BuildingType.APARTMENT,
+                transaction = TransactionType.SALE,
+            )
+        )
 
         val filteredApartments = apartments
-            .filter { !apartmentRepository.existsByIdOrFingerprint(it.id, it.fingerprint) } // todo, just update date in already existant apartments
+            .filter {
+                !apartmentRepository.existsByIdOrFingerprint(
+                    it.id,
+                    it.fingerprint
+                )
+            } // todo, just update date in already existant apartments
 
-        apartmentRepository.saveAll(filteredApartments) // todo check if all have been saved
+        Log.info("Saving ${filteredApartments.size} apartments (vs ${apartments.size} fetched)")
+
+        if (!filteredApartments.isEmpty()) {
+            apartmentRepository.saveAll(filteredApartments) // todo check if all have been saved
+        }
     }
 }

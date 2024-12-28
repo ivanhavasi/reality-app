@@ -1,32 +1,35 @@
 package cz.havasi.repository.entity
 
+import org.bson.codecs.pojo.annotations.BsonCreator
+import org.bson.codecs.pojo.annotations.BsonId
+import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
 import java.time.OffsetDateTime
 
-internal data class ApartmentEntity(
-    val id: ObjectId,
-    val externalId: String,
-    val fingerprint: String,
-    val name: String,
-    val price: Double,
-    val pricePerM2: Double?,
-    val sizeInM2: Double,
-    val currency: String,
-    val locality: LocalityEntity,
-    val mainCategory: String,
-    val subCategory: String?,
-    val transactionType: String,
-    val images: List<String> = emptyList<String>(),
-    val description: String? = null,
-    val createdAt: OffsetDateTime,
-    val updatedAt: OffsetDateTime,
+public data class ApartmentEntity @BsonCreator constructor(
+    @BsonId val id: ObjectId,
+    @BsonProperty("externalId") val externalId: String,
+    @BsonProperty("fingerprint") val fingerprint: String,
+    @BsonProperty("name") val name: String,
+    @BsonProperty("price") val price: Double,
+    @BsonProperty("pricePerM2") val pricePerM2: Double?,
+    @BsonProperty("sizeInM2") val sizeInM2: Double,
+    @BsonProperty("currency") val currency: String,
+    @BsonProperty("locality") val locality: LocalityEntity,
+    @BsonProperty("mainCategory") val mainCategory: String,
+    @BsonProperty("subCategory") val subCategory: String?,
+    @BsonProperty("transactionType") val transactionType: String,
+    @BsonProperty("images") val images: List<String> = emptyList(),
+    @BsonProperty("description") val description: String? = null,
+    @BsonProperty("createdAt") val createdAt: OffsetDateTime,
+    @BsonProperty("updatedAt") val updatedAt: OffsetDateTime,
 )
 
-public data class LocalityEntity(
-    val city: String,
-    val district: String?,
-    val street: String?,
-    val streetNumber: String?,
-    val latitude: Double?,
-    val longitude: Double?,
+public data class LocalityEntity @BsonCreator constructor(
+    @BsonProperty("city") val city: String,
+    @BsonProperty("district") val district: String?,
+    @BsonProperty("street") val street: String?,
+    @BsonProperty("streetNumber") val streetNumber: String?,
+    @BsonProperty("latitude") val latitude: Double?,
+    @BsonProperty("longitude") val longitude: Double?,
 )
