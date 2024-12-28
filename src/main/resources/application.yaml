@@ -1,0 +1,8 @@
+quarkus:
+  rest-client:
+    "sreality-api":
+      url: "https://www.sreality.cz"
+      connect-timeout: 3000
+      read-timeout: 5000
+  application:
+    name: "reality-app"

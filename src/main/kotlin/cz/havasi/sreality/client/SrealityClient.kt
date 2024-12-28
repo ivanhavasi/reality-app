@@ -1,6 +1,6 @@
-package cz.havasi.client
+package cz.havasi.sreality.client
 
-import cz.havasi.client.model.SrealitySearchResult
+import cz.havasi.sreality.model.SrealitySearchResult
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces

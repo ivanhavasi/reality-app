@@ -1,4 +1,4 @@
-package cz.havasi.client.model
+package cz.havasi.sreality.model
 
 import SrealityApartment
 

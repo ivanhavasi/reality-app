@@ -1,22 +1,22 @@
 package cz.havasi.model
 
-internal data class Apartment(
-    val id: Long,
+public data class Apartment( // todo maybe make it internal for main layer only
+    val id: String,
+    val fingerprint: String,
     val name: String,
     val price: Double,
     val pricePerM2: Double?,
-    val m2: Double?,
-    val currency: String,
+    val sizeInM2: Double,
+    val currency: CurrencyType,
     val locality: Locality,
-    val mainCategory: String,
-    val subCategory: String,
-    val transactionType: String,
-    val images: List<String>,
+    val mainCategory: BuildingType,
+    val subCategory: String?,
+    val transactionType: TransactionType,
+    val images: List<String> = emptyList<String>(),
     val description: String? = null,
-    val createdAt: String? = null,
 )
 
-internal data class Locality(
+public data class Locality(
     val city: String,
     val district: String?,
     val street: String?,
@@ -25,3 +25,19 @@ internal data class Locality(
     val longitude: Double?,
 )
 
+public enum class CurrencyType {
+    CZ,
+    EUR,
+    USD,
+}
+
+public enum class BuildingType {
+    APARTMENT,
+    HOUSE,
+    LAND,
+}
+
+public enum class TransactionType {
+    SALE,
+    RENT,
+}

@@ -1,37 +1,26 @@
 package cz.havasi.controller
 
-import cz.havasi.client.SrealityClient
-import cz.havasi.client.model.SrealitySearchResult
+import cz.havasi.service.RealityService
+import cz.havasi.sreality.client.SrealityClient
+import cz.havasi.sreality.model.SrealitySearchResult
 import io.quarkus.logging.Log
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.core.MediaType
-import org.eclipse.microprofile.rest.client.inject.RestClient
 
 @Path("/hello")
 internal class RealityController(
-    @RestClient private val srealityClient: SrealityClient,
+    private val realityService: RealityService,
 ) {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    suspend fun searchEstates(): SrealitySearchResult {
+    suspend fun searchEstates(): String {
         Log.info("Searching estates")
-        val data = srealityClient.searchEstates(
-            categoryType = 1,
-            categoryMain = 1,
-            localityCountryId = 112,
-            localityRegionId = 10,
-            limit = 22,
-            offset = 0,
-            lang = "cs",
-            sort = "-date",
-            topTimestampTo = System.currentTimeMillis(),
-        )
-        Log.info("Estates found size: ${data.results.size}")
+        realityService.fetchAndSaveApartmentsForSale()
 
-        return data
+        return "Hello world"
     }
 
     @GET
@@ -40,5 +29,4 @@ internal class RealityController(
         println("INSIDE2")
         return "Hello world"
     }
-
 }

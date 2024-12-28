@@ -1,6 +1,4 @@
 import com.fasterxml.jackson.annotation.JsonProperty
-import java.time.OffsetDateTime
-import java.time.ZoneOffset.UTC
 
 internal data class SrealityApartment(
     @JsonProperty("hash_id") val hashId: String,
@@ -13,7 +11,6 @@ internal data class SrealityApartment(
     @JsonProperty("category_sub_cb") val subCategory: SrealityProperty?,
     @JsonProperty("category_type_cb") val transactionType: SrealityProperty?,
     @JsonProperty("advert_images") val images: List<String>,
-    @JsonProperty("createdAt") val createdAt: OffsetDateTime = OffsetDateTime.now(UTC)
 )
 
 internal data class SrealityLocality(
