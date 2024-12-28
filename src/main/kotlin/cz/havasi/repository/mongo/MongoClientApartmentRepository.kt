@@ -62,6 +62,7 @@ internal class MongoClientApartmentRepository(
             externalId = id,
             fingerprint = fingerprint,
             name = name,
+            url = url,
             price = price,
             pricePerM2 = pricePerM2,
             sizeInM2 = sizeInM2,

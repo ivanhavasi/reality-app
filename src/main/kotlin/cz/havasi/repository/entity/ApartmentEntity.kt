@@ -11,6 +11,7 @@ public data class ApartmentEntity @BsonCreator constructor(
     @BsonProperty("externalId") val externalId: String,
     @BsonProperty("fingerprint") val fingerprint: String,
     @BsonProperty("name") val name: String,
+    @BsonProperty("url") val url: String,
     @BsonProperty("price") val price: Double,
     @BsonProperty("pricePerM2") val pricePerM2: Double?,
     @BsonProperty("sizeInM2") val sizeInM2: Double,

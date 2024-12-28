@@ -15,6 +15,10 @@ internal data class SrealityApartment(
 
 internal data class SrealityLocality(
     @JsonProperty("city") val city: String,
+    @JsonProperty("city_seo_name") val citySeoName: String,
+    @JsonProperty("citypart_seo_name") val citypartSeoName: String,
+    @JsonProperty("district_seo_name") val districtSeoName: String,
+    @JsonProperty("street_seo_name") val streetSeoName: String,
     @JsonProperty("district") val district: String?,
     @JsonProperty("street") val street: String?,
     @JsonProperty("streetnumber") val streetNumber: String?,

@@ -4,6 +4,7 @@ public data class Apartment( // todo maybe make it internal for main layer only
     val id: String,
     val fingerprint: String,
     val name: String,
+    val url: String,
     val price: Double,
     val pricePerM2: Double?,
     val sizeInM2: Double,

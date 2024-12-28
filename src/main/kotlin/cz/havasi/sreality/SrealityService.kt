@@ -13,11 +13,14 @@ import cz.havasi.service.EstatesProvider
 import cz.havasi.sreality.client.SrealityClient
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
 
 @ApplicationScoped
-public class SrealityService internal constructor( // todo, add it into new module
+public class SrealityService internal constructor(
+    // todo, add it into new module
     @RestClient private val srealityClient: SrealityClient,
+    @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : EstatesProvider {
 
     override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> {
@@ -43,6 +46,7 @@ public class SrealityService internal constructor( // todo, add it into new modu
             id = hashId,
             fingerprint = calculateFingerprint(),
             name = name,
+            url = prepareUrl(),
             price = price,
             pricePerM2 = pricePerM2 ?: error("Sreality apartment $hashId has no price per m2"),
             sizeInM2 = price / pricePerM2,
@@ -55,6 +59,9 @@ public class SrealityService internal constructor( // todo, add it into new modu
                 ?: error("Sreality apartment $hashId has no transaction type"),
             images = images,
         )
+
+    private fun SrealityApartment.prepareUrl() =
+        "$baseUrl/detail/prodej/byt/${subCategory?.name}/${locality.citySeoName}-${locality.citypartSeoName}-${locality.streetSeoName}/$hashId"
 
     private fun SrealityApartment.calculateFingerprint() =
         "${mainCategory?.name}-${locality.city}-${locality.street}-${images.size}" // todo, add hash function
