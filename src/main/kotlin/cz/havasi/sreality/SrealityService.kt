@@ -24,14 +24,14 @@ public class SrealityService internal constructor(
 ) : EstatesProvider {
 
     override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> {
-        Log.info("Searching sreality estates")
+        Log.info("Searching sreality estates. limit ${getEstatesCommand.limit}, offset ${getEstatesCommand.offset}")
         return srealityClient.searchEstates(
             categoryType = 1,
             categoryMain = 1,
             localityCountryId = 112,
             localityRegionId = 10,
-            limit = 22,
-            offset = 0,
+            limit = getEstatesCommand.limit,
+            offset = getEstatesCommand.offset,
             lang = "cs",
             sort = "-date",
             topTimestampTo = System.currentTimeMillis(),
@@ -61,7 +61,7 @@ public class SrealityService internal constructor(
         )
 
     private fun SrealityApartment.prepareUrl() =
-        "$baseUrl/detail/prodej/byt/${subCategory?.name}/${locality.citySeoName}-${locality.citypartSeoName}-${locality.streetSeoName}/$hashId"
+        "$baseUrl/detail/prodej/byt/${subCategory?.name}/${locality.citySeoName ?: ""}-${locality.citypartSeoName ?: ""}-${locality.streetSeoName ?: ""}/$hashId"
 
     private fun SrealityApartment.calculateFingerprint() =
         "${mainCategory?.name}-${locality.city}-${locality.street}-${images.size}" // todo, add hash function

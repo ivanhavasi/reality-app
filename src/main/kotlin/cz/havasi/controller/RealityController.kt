@@ -1,8 +1,6 @@
 package cz.havasi.controller
 
 import cz.havasi.service.RealityService
-import cz.havasi.sreality.client.SrealityClient
-import cz.havasi.sreality.model.SrealitySearchResult
 import io.quarkus.logging.Log
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
