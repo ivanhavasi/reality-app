@@ -53,6 +53,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Get Commit Hash
+        id: get_commit_hash
+        run: echo "COMMIT_HASH=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Commit Hash
+        run: echo "COMMIT HASH ${{ env.COMMIT_HASH }}"
+
       - name: SSH into EC2 and Deploy Container
         uses: appleboy/ssh-action@master
         with:
