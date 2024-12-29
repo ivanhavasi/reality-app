@@ -33,5 +33,5 @@ jobs:
 
             # Run the new container from the image tagged with the commit hash
             docker run -d --name reality-app -p 8080:8080 \
-              -e MONGODB_CONNECTION_STRING=${{ secrets.MONGODB_CONNECTION_STRING }} \
+              -e MONGODB_CONNECTION_STRING="${{ secrets.MONGODB_CONNECTION_STRING }}" \
               ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.commit_hash }}
