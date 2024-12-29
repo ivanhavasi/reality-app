@@ -13,7 +13,7 @@ public class OffsetDateTimeCodecProvider : CodecProvider {
         if (clazz == OffsetDateTime::class.java) {
             return OffsetDateTimeCodec() as Codec<T>?
         }
-        // return null when not a provider for the requested class
+        // return null when a provider for the requested class doesn't exist
         return null
     }
 }
