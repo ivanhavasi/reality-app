@@ -1,5 +1,7 @@
 import com.fasterxml.jackson.annotation.JsonProperty
+import io.quarkus.runtime.annotations.RegisterForReflection
 
+@RegisterForReflection
 internal data class SrealityApartment(
     @JsonProperty("hash_id") val hashId: String,
     @JsonProperty("advert_name") val name: String,
@@ -13,6 +15,7 @@ internal data class SrealityApartment(
     @JsonProperty("advert_images") val images: List<String>,
 )
 
+@RegisterForReflection
 internal data class SrealityLocality(
     @JsonProperty("city") val city: String,
     @JsonProperty("city_seo_name") val citySeoName: String?,
@@ -26,6 +29,7 @@ internal data class SrealityLocality(
     @JsonProperty("gps_lon") val longitude: Double?
 )
 
+@RegisterForReflection
 internal data class SrealityProperty(
     val name: String,
     val value: String
