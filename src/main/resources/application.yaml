@@ -1,4 +1,6 @@
 quarkus:
+  mongodb:
+    connection-string: ${MONGODB_CONNECTION_STRING}
   rest-client:
     "sreality-api":
       url: "https://www.sreality.cz"
@@ -6,3 +8,7 @@ quarkus:
       read-timeout: 5000
   application:
     name: "reality-app"
+
+reality:
+  scheduler:
+    cron: "0 */30 6-23 * * ?"
