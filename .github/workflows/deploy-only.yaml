@@ -1,0 +1,37 @@
+name: Deploy to EC2
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_hash:
+        description: 'Commit hash for the Docker image to deploy'
+        required: true
+        type: string
+
+jobs:
+  deploy-to-ec2:
+    name: Deploy on EC2 with Specific Commit Hash
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Commit Hash
+        run: echo "COMMIT HASH ${{ github.event.inputs.commit_hash }}"
+
+      - name: SSH into EC2 and Deploy Container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Pull the Docker image by the given commit hash
+            docker pull ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.commit_hash }}
+
+            # Stop and remove the old container if running
+            docker stop reality-app || true
+            docker rm reality-app || true
+
+            # Run the new container from the image tagged with the commit hash
+            docker run -d --name reality-app -p 8080:8080 \
+              -e MONGODB_CONNECTION_STRING=${{ secrets.MONGODB_CONNECTION_STRING }} \
+              ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.commit_hash }}
