@@ -32,7 +32,7 @@ jobs:
       - name: Build Native Docker Image with Gradle
         run: |
           # Build the Quarkus native Docker image using Gradle
-          ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.native.container-build=true -Dquarkus.native.container-runtime=docker
+          ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.native.container-build=true -Dquarkus.package.jar.enabled=false -Dquarkus.native.container-runtime=docker
 
       - name: Build, Tag, and Push Docker Image
         run: |
