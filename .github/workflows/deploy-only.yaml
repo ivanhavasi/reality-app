@@ -1,6 +1,13 @@
 name: Deploy to EC2
 
 on:
+  workflow_call:
+    inputs:
+      commit_hash:
+        description: 'Commit hash for the Docker image to deploy'
+        required: true
+        type: string
+
   workflow_dispatch:
     inputs:
       commit_hash:
@@ -14,8 +21,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Commit Hash
-        run: echo "COMMIT HASH ${{ github.event.inputs.commit_hash }}"
+      - name: Note Commit Hash
+        id: build
+        run: |
+          echo "::notice title=Commit Hash::${{ github.event.inputs.commit_hash }}"
+        shell: bash
 
       - name: SSH into EC2 and Deploy Container
         uses: appleboy/ssh-action@master
