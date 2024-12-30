@@ -1,0 +1,23 @@
+name: Deploy to EC2
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_hash:
+        description: 'Commit hash for the Docker image to deploy'
+        required: true
+        type: string
+
+jobs:
+  deploy-to-ec2:
+    name: Deploy on EC2
+    uses: ivanhavasi/reality-app/.github/workflows/deploy.yaml@main
+    secrets:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_USER: ${{ secrets.EC2_USER }}
+      EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
+    with:
+      commit_hash: ${{ inputs.commit_hash }}

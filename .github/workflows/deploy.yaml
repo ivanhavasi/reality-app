@@ -27,13 +27,6 @@ on:
         description: 'MongoDB connection string'
         required: true
 
-  workflow_dispatch:
-    inputs:
-      commit_hash:
-        description: 'Commit hash for the Docker image to deploy'
-        required: true
-        type: string
-
 jobs:
   deploy-to-ec2:
     name: Deploy on EC2 with Specific Commit Hash
