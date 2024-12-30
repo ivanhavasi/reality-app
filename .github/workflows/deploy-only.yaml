@@ -7,6 +7,25 @@ on:
         description: 'Commit hash for the Docker image to deploy'
         required: true
         type: string
+    secrets:
+      EC2_HOST:
+        description: 'EC2 Host address'
+        required: true
+      EC2_USER:
+        description: 'EC2 SSH user'
+        required: true
+      EC2_SSH_KEY:
+        description: 'EC2 SSH private key'
+        required: true
+      AWS_REGION:
+        description: 'AWS region'
+        required: true
+      ECR_REPOSITORY:
+        description: 'ECR repository URL'
+        required: true
+      MONGODB_CONNECTION_STRING:
+        description: 'MongoDB connection string'
+        required: true
 
   workflow_dispatch:
     inputs:
@@ -24,7 +43,7 @@ jobs:
       - name: Note Commit Hash
         id: build
         run: |
-          echo "::notice title=Commit Hash::${{ github.event.inputs.commit_hash }}"
+          echo "::notice title=Applied Commit Hash::${{ inputs.commit_hash }}"
         shell: bash
 
       - name: SSH into EC2 and Deploy Container
@@ -38,7 +57,7 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
 
             # Pull the Docker image by the given commit hash
-            docker pull ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.commit_hash }}
+            docker pull ${{ secrets.ECR_REPOSITORY }}:${{ inputs.commit_hash }}
 
             # Stop and remove the old container if running
             docker stop reality-app || true
