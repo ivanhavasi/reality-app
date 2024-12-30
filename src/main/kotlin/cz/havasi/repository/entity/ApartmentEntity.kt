@@ -1,11 +1,13 @@
 package cz.havasi.repository.entity
 
+import io.quarkus.runtime.annotations.RegisterForReflection
 import org.bson.codecs.pojo.annotations.BsonCreator
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
 import java.time.OffsetDateTime
 
+@RegisterForReflection
 public data class ApartmentEntity @BsonCreator constructor(
     @BsonId val id: ObjectId,
     @BsonProperty("externalId") val externalId: String,
@@ -26,6 +28,7 @@ public data class ApartmentEntity @BsonCreator constructor(
     @BsonProperty("updatedAt") val updatedAt: OffsetDateTime,
 )
 
+@RegisterForReflection
 public data class LocalityEntity @BsonCreator constructor(
     @BsonProperty("city") val city: String,
     @BsonProperty("district") val district: String?,
