@@ -6,9 +6,9 @@ import SrealityProperty
 import cz.havasi.model.Apartment
 import cz.havasi.model.BuildingType
 import cz.havasi.model.CurrencyType
-import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.model.Locality
 import cz.havasi.model.TransactionType
+import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.service.EstatesProvider
 import cz.havasi.sreality.client.SrealityClient
 import io.quarkus.logging.Log

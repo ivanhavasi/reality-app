@@ -1,8 +1,8 @@
 package cz.havasi.repository
 
-import cz.havasi.model.command.CreateUserCommand
 import cz.havasi.model.User
 import cz.havasi.model.command.AddUserNotificationCommand
+import cz.havasi.model.command.CreateUserCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
 
 public interface UserRepository {

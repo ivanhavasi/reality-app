@@ -1,6 +1,5 @@
 package cz.havasi.service
 
-import cz.havasi.model.command.AddNotificationCommand
 import cz.havasi.model.command.AddUserNotificationCommand
 import cz.havasi.model.command.CreateUserCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand

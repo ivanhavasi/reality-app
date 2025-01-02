@@ -6,18 +6,18 @@ import cz.havasi.model.Notification.EmailNotification
 import cz.havasi.model.Notification.WebhookNotification
 import cz.havasi.model.User
 import cz.havasi.model.command.AddNotificationCommand
-import cz.havasi.model.command.EmailNotificationCommand
-import cz.havasi.model.command.WebhookNotificationCommand
 import cz.havasi.model.command.AddUserNotificationCommand
 import cz.havasi.model.command.CreateUserCommand
+import cz.havasi.model.command.EmailNotificationCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
+import cz.havasi.model.command.WebhookNotificationCommand
 import cz.havasi.repository.DatabaseNames.DB_NAME
 import cz.havasi.repository.DatabaseNames.USER_COLLECTION_NAME
 import cz.havasi.repository.UserRepository
-import cz.havasi.repository.entity.NotificationEntity
 import cz.havasi.repository.entity.EmailNotificationEntity
-import cz.havasi.repository.entity.WebhookNotificationEntity
+import cz.havasi.repository.entity.NotificationEntity
 import cz.havasi.repository.entity.UserEntity
+import cz.havasi.repository.entity.WebhookNotificationEntity
 import io.quarkus.mongodb.reactive.ReactiveMongoClient
 import io.smallrye.mutiny.coroutines.asFlow
 import io.smallrye.mutiny.coroutines.awaitSuspending
@@ -57,7 +57,7 @@ internal class MongoClientUserRepository(
             Updates.addToSet("notifications", command.notification.toEntity()),
         )
             .awaitSuspending()
-            .upsertedId != null
+            .modifiedCount > 0
 
     override suspend fun removeUserNotification(command: RemoveUserNotificationCommand): Boolean =
         mongoCollection.updateOne(
