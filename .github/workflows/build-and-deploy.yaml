@@ -67,4 +67,4 @@ jobs:
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
       MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
     with:
-      commit_hash: ${{ needs.build-and-push.outputs.commit_hash }}
+      commit_hash: ${{ needs.build-and-push.outputs.commit_hash }} # todo this does not get used correctly

@@ -25,13 +25,14 @@ internal class MongoClientApartmentRepository(
     private val mongoCollection =
         reactiveMongoClient.getDatabase(DB_NAME).getCollection(APARTMENT_COLLECTION_NAME, ApartmentEntity::class.java)
 
-    override suspend fun save(apartment: Apartment): ObjectId =
+    override suspend fun save(apartment: Apartment): String =
         mongoCollection
             .insertOne(apartment.toEntity())
             ?.awaitSuspending()
             ?.insertedId
             ?.asObjectId()
             ?.value
+            ?.toHexString()
             ?: throw error("Apartment with id ${apartment.id} was not saved into mongodb.")
 
     override suspend fun saveAll(apartments: List<Apartment>): List<ObjectId> =
@@ -58,7 +59,7 @@ internal class MongoClientApartmentRepository(
 
     private fun Apartment.toEntity() =
         ApartmentEntity(
-            id = ObjectId.get(),
+            _id = ObjectId.get(),
             externalId = id,
             fingerprint = fingerprint,
             name = name,

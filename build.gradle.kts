@@ -19,12 +19,14 @@ dependencies {
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation("io.quarkus:quarkus-scheduler")
     implementation("io.quarkus:quarkus-config-yaml")
-    implementation("io.quarkus:quarkus-mongodb-client")
     implementation("io.quarkus:quarkus-rest-client-jackson")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-kotlin")
+
+    implementation("io.quarkus:quarkus-mongodb-client")
+    implementation("org.mongodb:bson-kotlin:5.2.1")
 
     implementation("io.smallrye.reactive:mutiny-kotlin:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")

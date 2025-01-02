@@ -1,4 +1,7 @@
-package cz.havasi.model
+package cz.havasi.model.command
+
+import cz.havasi.model.BuildingType
+import cz.havasi.model.TransactionType
 
 public data class GetEstatesCommand(
     val type: BuildingType,

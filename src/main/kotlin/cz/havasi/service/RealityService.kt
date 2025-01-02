@@ -2,7 +2,7 @@ package cz.havasi.service
 
 import cz.havasi.model.Apartment
 import cz.havasi.model.BuildingType
-import cz.havasi.model.GetEstatesCommand
+import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.model.TransactionType
 import cz.havasi.repository.ApartmentRepository
 import io.quarkus.arc.All
