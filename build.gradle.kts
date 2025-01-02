@@ -22,7 +22,6 @@ dependencies {
     implementation("io.quarkus:quarkus-rest-client-jackson")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-arc")
-    implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-kotlin")
 
     implementation("io.quarkus:quarkus-mongodb-client")
@@ -49,8 +48,8 @@ kotlin {
     jvmToolchain(21)
 }
 
-tasks.quarkusDev { // for live reload
-    compilerOptions {
-        compiler("kotlin").args(listOf("-Werror"))
-    }
-}
+//tasks.quarkusDev { // for live reload
+//    compilerOptions {
+//        compiler("kotlin").args(listOf("-Werror"))
+//    }
+//}

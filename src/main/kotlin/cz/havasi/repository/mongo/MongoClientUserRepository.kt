@@ -2,19 +2,21 @@ package cz.havasi.repository.mongo
 
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Updates
-import cz.havasi.model.command.CreateUserCommand
-import cz.havasi.model.Notification
 import cz.havasi.model.Notification.EmailNotification
 import cz.havasi.model.Notification.WebhookNotification
 import cz.havasi.model.User
+import cz.havasi.model.command.AddNotificationCommand
+import cz.havasi.model.command.EmailNotificationCommand
+import cz.havasi.model.command.WebhookNotificationCommand
 import cz.havasi.model.command.AddUserNotificationCommand
+import cz.havasi.model.command.CreateUserCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
 import cz.havasi.repository.DatabaseNames.DB_NAME
 import cz.havasi.repository.DatabaseNames.USER_COLLECTION_NAME
 import cz.havasi.repository.UserRepository
 import cz.havasi.repository.entity.NotificationEntity
-import cz.havasi.repository.entity.NotificationEntity.EmailNotificationEntity
-import cz.havasi.repository.entity.NotificationEntity.WebhookNotificationEntity
+import cz.havasi.repository.entity.EmailNotificationEntity
+import cz.havasi.repository.entity.WebhookNotificationEntity
 import cz.havasi.repository.entity.UserEntity
 import io.quarkus.mongodb.reactive.ReactiveMongoClient
 import io.smallrye.mutiny.coroutines.asFlow
@@ -78,7 +80,7 @@ internal class MongoClientUserRepository(
     private fun NotificationEntity.toModel() =
         when (this) {
             is EmailNotificationEntity -> EmailNotification(
-                id = _id.toHexString(),
+                id = id.toHexString(),
                 name = name,
                 filter = filter,
                 updatedAt = updatedAt,
@@ -87,7 +89,7 @@ internal class MongoClientUserRepository(
             )
 
             is WebhookNotificationEntity -> WebhookNotification(
-                id = _id.toHexString(),
+                id = id.toHexString(),
                 name = name,
                 filter = filter,
                 updatedAt = updatedAt,
@@ -96,23 +98,23 @@ internal class MongoClientUserRepository(
             )
         }
 
-    private fun Notification.toEntity() =
+    private fun AddNotificationCommand.toEntity() =
         when (this) {
-            is EmailNotification -> EmailNotificationEntity(
-                _id = ObjectId(id),
+            is EmailNotificationCommand -> EmailNotificationEntity(
+                id = ObjectId.get(),
                 name = name,
                 filter = filter,
-                updatedAt = updatedAt,
-                createdAt = createdAt,
+                updatedAt = OffsetDateTime.now(UTC),
+                createdAt = OffsetDateTime.now(UTC),
                 email = email,
             )
 
-            is WebhookNotification -> WebhookNotificationEntity(
-                _id = ObjectId(id),
+            is WebhookNotificationCommand -> WebhookNotificationEntity(
+                id = ObjectId.get(),
                 name = name,
                 filter = filter,
-                updatedAt = updatedAt,
-                createdAt = createdAt,
+                updatedAt = OffsetDateTime.now(UTC),
+                createdAt = OffsetDateTime.now(UTC),
                 url = url,
             )
         }
