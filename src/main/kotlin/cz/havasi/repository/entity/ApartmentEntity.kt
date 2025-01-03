@@ -1,8 +1,10 @@
 package cz.havasi.repository.entity
 
+import io.quarkus.runtime.annotations.RegisterForReflection
 import org.bson.types.ObjectId
 import java.time.OffsetDateTime
 
+@RegisterForReflection
 public data class ApartmentEntity(
     val _id: ObjectId,
     val externalId: String,
@@ -23,6 +25,7 @@ public data class ApartmentEntity(
     val updatedAt: OffsetDateTime,
 )
 
+@RegisterForReflection
 public data class LocalityEntity(
     val city: String,
     val district: String?,

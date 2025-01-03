@@ -12,7 +12,7 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 @ApplicationScoped
-internal class RealityService(
+public class RealityService(
     private val apartmentRepository: ApartmentRepository,
     @All private val estateProviders: MutableList<EstatesProvider>,
 ) {
@@ -21,7 +21,7 @@ internal class RealityService(
         Log.debug("Estate providers: $estateProviders")
     }
 
-    suspend fun fetchAndSaveApartmentsForSale() {
+    public suspend fun fetchAndSaveApartmentsForSale(): Unit {
         Log.info("Fetching and saving apartments for sale")
         estateProviders.forEach { fetchAndSaveApartmentsForProvider(it) }
     }

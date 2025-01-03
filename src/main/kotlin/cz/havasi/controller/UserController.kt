@@ -1,11 +1,13 @@
 package cz.havasi.controller
 
 import cz.havasi.controller.model.ResponseId
+import cz.havasi.model.Notification
 import cz.havasi.model.User
 import cz.havasi.model.command.AddNotificationCommand
 import cz.havasi.model.command.AddUserNotificationCommand
 import cz.havasi.model.command.CreateUserCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
+import cz.havasi.service.NotificationService
 import cz.havasi.service.UserService
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Consumes
@@ -23,6 +25,7 @@ import jakarta.ws.rs.core.Response
 @ApplicationScoped
 internal class UserController(
     private val userService: UserService,
+    private val notificationService: NotificationService,
 ) {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -43,11 +46,18 @@ internal class UserController(
     suspend fun addUserNotification(
         @PathParam("userId") userId: String,
         addNotificationCommand: AddNotificationCommand
-    ): Response = // todo  maybe return notificationId
-        userService.addUserNotification(AddUserNotificationCommand(userId, addNotificationCommand))
-            .takeIf { it }
-            ?.wrapToNoContent()
-            ?: throw ServerErrorException("Notification was not added.", 500)
+    ): Response =
+        notificationService.addUserNotification(AddUserNotificationCommand(userId, addNotificationCommand))
+            .let { Response.ok(ResponseId(it)).build() }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{userId}/notifications")
+    suspend fun getUserNotifications(
+        @PathParam("userId") userId: String,
+    ): List<Notification> =
+        notificationService
+            .getUserNotifications(userId)
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
@@ -56,7 +66,7 @@ internal class UserController(
         @PathParam("userId") userId: String,
         @PathParam("notificationId") notificationId: String,
     ): Response =
-        userService
+        notificationService
             .removeUserNotification(RemoveUserNotificationCommand(userId, notificationId))
             .takeIf { it }
             ?.wrapToNoContent()
