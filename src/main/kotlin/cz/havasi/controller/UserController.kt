@@ -7,7 +7,7 @@ import cz.havasi.model.command.AddNotificationCommand
 import cz.havasi.model.command.AddUserNotificationCommand
 import cz.havasi.model.command.CreateUserCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
-import cz.havasi.service.NotificationService
+import cz.havasi.service.notification.NotificationService
 import cz.havasi.service.UserService
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Consumes
