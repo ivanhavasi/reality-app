@@ -5,15 +5,12 @@ import cz.havasi.model.BuildingType
 import cz.havasi.model.CurrencyType
 import cz.havasi.model.EmailNotification
 import cz.havasi.model.Locality
-import cz.havasi.model.Notification
 import cz.havasi.model.NotificationFilter
 import cz.havasi.model.TransactionType
 import cz.havasi.model.WebhookNotification
-import cz.havasi.model.event.NotificationEvent
 import cz.havasi.rest.client.MailjetClient
 import cz.havasi.service.RealityService
 import io.quarkus.logging.Log
-import jakarta.enterprise.event.Event
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
@@ -25,7 +22,6 @@ import java.time.OffsetDateTime
 @Path("/hello")
 internal class RealityController(
     private val realityService: RealityService,
-    private val eventSender: Event<NotificationEvent>,
     @RestClient private val service: MailjetClient,
 ) {
 
@@ -84,9 +80,9 @@ internal class RealityController(
             createdAt = OffsetDateTime.now(),
             url = "testUrl",
         )
-        (0..1).forEach {
+        (0..0).forEach {
             Log.info("Sending event $it")
-            eventSender.fire(NotificationEvent(listOf(notification,notification2), apartment))
+//            eventSender3.fire(HandleNotificationsEvent(apartment, listOf(notification)))
         }
         println("AFTEREER")
 

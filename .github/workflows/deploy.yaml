@@ -26,6 +26,12 @@ on:
       MONGODB_CONNECTION_STRING:
         description: 'MongoDB connection string'
         required: true
+      MAILJET_USERNAME:
+        description: 'Username for Mailjet'
+        required: true
+      MAILJET_PASSWORD:
+        description: 'Password for Mailjet'
+        required: true
 
 jobs:
   deploy-to-ec2:
@@ -59,4 +65,6 @@ jobs:
             # Run the new container from the image tagged with the commit hash
             docker run -d --name reality-app -p 8080:8080 \
               -e MONGODB_CONNECTION_STRING="${{ secrets.MONGODB_CONNECTION_STRING }}" \
+              -e MAILJET_USERNAME="${{ secrets.MAILJET_USERNAME }}" \
+              -e MAILJET_PASSWORD="${{ secrets.MAILJET_PASSWORD }}" \
               ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.commit_hash }}

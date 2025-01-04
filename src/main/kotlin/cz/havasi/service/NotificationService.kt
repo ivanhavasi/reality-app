@@ -1,11 +1,13 @@
 package cz.havasi.service
 
 import cz.havasi.model.Apartment
+import cz.havasi.model.EmailNotification
 import cz.havasi.model.Notification
+import cz.havasi.model.WebhookNotification
 import cz.havasi.model.command.AddUserNotificationCommand
 import cz.havasi.model.command.FindNotificationsForFilterCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
-import cz.havasi.model.event.NotificationEvent
+import cz.havasi.model.event.HandleNotificationsEvent
 import cz.havasi.repository.NotificationRepository
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
@@ -14,7 +16,8 @@ import jakarta.enterprise.event.Event
 @ApplicationScoped
 public class NotificationService(
     private val notificationRepository: NotificationRepository,
-    private val eventSender: Event<NotificationEvent>,
+    private val emailNotificationSender: Event<HandleNotificationsEvent<EmailNotification>>,
+    private val webhookNotificationSender: Event<HandleNotificationsEvent<WebhookNotification>>,
 ) {
     public suspend fun sendNotificationsForApartments(apartments: List<Apartment>) {
         apartments.forEach { apartment ->
@@ -40,9 +43,25 @@ public class NotificationService(
             }
 
     private fun List<Notification>.sendNotifications(apartment: Apartment) {
+        val emailNotifications = mutableListOf<EmailNotification>()
+        val webhookNotifications = mutableListOf<WebhookNotification>()
+
+        // sort notifications into correct lists
+        forEach { notification ->
+            when (notification) {
+                is EmailNotification -> emailNotifications.add(notification)
+                is WebhookNotification -> webhookNotifications.add(notification)
+            }
+        }
+
         Log.debug("Firing event for notifications for apartment ${apartment.id}")
-        val event = NotificationEvent(this, apartment)
-        eventSender.fire(event) // todo not working, do what NotificationEventObserver does
+        // fire events for notifications
+        if (emailNotifications.isNotEmpty()) {
+            emailNotificationSender.fire(HandleNotificationsEvent(apartment, emailNotifications))
+        }
+        if (webhookNotifications.isNotEmpty()) {
+            webhookNotificationSender.fire(HandleNotificationsEvent(apartment, webhookNotifications))
+        }
     }
 
     private fun Apartment.toFilterCommand() =

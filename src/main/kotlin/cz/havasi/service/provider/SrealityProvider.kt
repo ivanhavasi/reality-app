@@ -17,7 +17,6 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 
 @ApplicationScoped
 public class SrealityProvider internal constructor(
-    // todo, add it into a new custom module
     @RestClient private val srealityClient: SrealityClient,
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : EstatesProvider {

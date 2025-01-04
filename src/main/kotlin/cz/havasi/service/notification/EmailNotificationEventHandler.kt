@@ -2,34 +2,32 @@ package cz.havasi.service.notification
 
 import cz.havasi.model.Apartment
 import cz.havasi.model.EmailNotification
-import cz.havasi.model.command.HandleNotificationsCommand
+import cz.havasi.model.event.HandleNotificationsEvent
 import cz.havasi.rest.client.MailjetClient
 import cz.havasi.rest.client.model.EmailAddress
 import cz.havasi.rest.client.model.MailjetEmail
 import cz.havasi.rest.client.model.MailjetEmailWrapper
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.eclipse.microprofile.rest.client.inject.RestClient
 
 @ApplicationScoped
-internal class EmailNotificationHandler(
+internal class EmailNotificationEventHandler(
     @RestClient private val mailjetClient: MailjetClient,
-) : NotificationHandler<EmailNotification> {
+) : NotificationEventHandler<EmailNotification> {
 
-    override fun handleNotifications(command: HandleNotificationsCommand<EmailNotification>) {
-        Log.info("Handling ${command.notifications.size} email notifications for apartment ${command.apartment.id}")
+    override fun handleNotifications(@Observes event: HandleNotificationsEvent<EmailNotification>) {
+        Log.info("Handling ${event.notifications.size} email notifications for apartment ${event.apartment.id}")
         CoroutineScope(Dispatchers.IO).launch {
-            delay(1000) // todo remove
-            Log.info("After wait")
-            command.sendEmails()
+            event.sendEmails()
         }
     }
 
-    private suspend fun HandleNotificationsCommand<EmailNotification>.sendEmails(): Unit {
+    private suspend fun HandleNotificationsEvent<EmailNotification>.sendEmails(): Unit {
         val emails = notifications.map { notification ->
             MailjetEmail(
                 from = EMAIL_FROM,

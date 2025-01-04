@@ -1,4 +1,8 @@
 quarkus:
+  log:
+    category:
+      "org.mongodb": "WARN"
+      "org.mongo": "WARN"
   mongodb:
     connection-string: ${MONGODB_CONNECTION_STRING}
   rest-client:
