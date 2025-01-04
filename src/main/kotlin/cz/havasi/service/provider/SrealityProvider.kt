@@ -76,7 +76,7 @@ public class SrealityProvider internal constructor(
         )
 
     private fun String.toCurrencyType() = when (this) { // todo, maybe it can be done via value and not string name
-        "Kč" -> CurrencyType.CZ
+        "Kč" -> CurrencyType.CZK
         "€" -> CurrencyType.EUR
         "$" -> CurrencyType.USD
         else -> error("Unknown currency type: $this")

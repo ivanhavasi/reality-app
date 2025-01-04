@@ -95,15 +95,15 @@ internal class MongoClientNotificationRepository(
      *
      * @param T the type of the number, a subclass of `Number`
      * @param filterList the list of BSON filters
-     * @param name the filter field name, only 'size' and 'price' are supported // todo validate it
+     * @param name the filter field name, only 'size' and 'price' are supported // todo validate it, maybe add enum
      */
-    private fun <T: Number> T?.addRangeFilter(filterList: MutableList<Bson>, name: String) {
+    private fun <T : Number> T?.addRangeFilter(filterList: MutableList<Bson>, name: String) {
         this?.let {
             filterList.add(
                 Filters.and(
                     Filters.lte("filter.$name.from", it),
                     Filters.gte("filter.$name.to", it),
-                )
+                ),
             )
         }
     }

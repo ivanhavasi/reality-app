@@ -5,7 +5,7 @@ import cz.havasi.model.BuildingType
 import cz.havasi.model.TransactionType
 import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.repository.ApartmentRepository
-import cz.havasi.service.notification.NotificationService
+import cz.havasi.service.provider.EstatesProvider
 import io.quarkus.arc.All
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
@@ -54,14 +54,14 @@ public class RealityService(
                 transaction = TransactionType.SALE,
                 offset = offset,
                 limit = limit,
-            )
+            ),
         )
 
         val filteredApartments = apartments
             .filter {
                 !apartmentRepository.existsByIdOrFingerprint(
                     it.id,
-                    it.fingerprint
+                    it.fingerprint,
                 )
             } // todo, just update date in already existant apartments?
 

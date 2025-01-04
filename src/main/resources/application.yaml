@@ -6,9 +6,17 @@ quarkus:
       url: "https://www.sreality.cz"
       connect-timeout: 3000
       read-timeout: 5000
+    "mailjet-api":
+      url: "https://api.mailjet.com"
+      connect-timeout: 3000
+      read-timeout: 5000
   application:
     name: "reality-app"
 
 reality:
+  mailjet:
+    auth:
+      username: ${MAILJET_USERNAME}
+      password: ${MAILJET_PASSWORD}
   scheduler:
     cron: "0 */30 6-23 * * ?"

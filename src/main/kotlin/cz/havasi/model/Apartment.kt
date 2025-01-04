@@ -1,6 +1,7 @@
 package cz.havasi.model
 
-public data class Apartment( // todo maybe make it internal for main layer only
+public data class Apartment(
+    // todo maybe make it internal for main layer only
     val id: String,
     val fingerprint: String,
     val name: String,
@@ -27,7 +28,7 @@ public data class Locality(
 )
 
 public enum class CurrencyType {
-    CZ,
+    CZK,
     EUR,
     USD,
 }

@@ -14,7 +14,7 @@ import jakarta.enterprise.event.Event
 @ApplicationScoped
 public class NotificationService(
     private val notificationRepository: NotificationRepository,
-    private val eventSender: Event<NotificationEvent<Notification>>,
+    private val eventSender: Event<NotificationEvent>,
 ) {
     public suspend fun sendNotificationsForApartments(apartments: List<Apartment>) {
         apartments.forEach { apartment ->
@@ -40,9 +40,9 @@ public class NotificationService(
             }
 
     private fun List<Notification>.sendNotifications(apartment: Apartment) {
-        Log.debug("Firing async event for notifications for apartment ${apartment.id}")
+        Log.debug("Firing event for notifications for apartment ${apartment.id}")
         val event = NotificationEvent(this, apartment)
-        eventSender.fireAsync(event)
+        eventSender.fire(event) // todo not working, do what NotificationEventObserver does
     }
 
     private fun Apartment.toFilterCommand() =

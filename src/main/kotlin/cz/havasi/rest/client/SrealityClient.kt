@@ -8,11 +8,12 @@ import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 
+@Path("/api/v1")
 @RegisterRestClient(configKey = "sreality-api")
-internal fun interface SrealityClient {
+internal interface SrealityClient {
 
     @GET
-    @Path("/api/v1/estates/search")
+    @Path("/estates/search")
     @Produces(MediaType.APPLICATION_JSON)
     suspend fun searchEstates(
         @QueryParam("category_type_cb") categoryType: Int,

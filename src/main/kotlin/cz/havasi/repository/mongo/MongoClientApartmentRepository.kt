@@ -37,9 +37,11 @@ internal class MongoClientApartmentRepository(
 
     override suspend fun saveAll(apartments: List<Apartment>): List<ObjectId> =
         mongoCollection
-            .insertMany(apartments.map {
-                it.toEntity()
-            })
+            .insertMany(
+                apartments.map {
+                    it.toEntity()
+                },
+            )
             ?.awaitSuspending()
             ?.insertedIds
             ?.map { it.value.asObjectId().value }

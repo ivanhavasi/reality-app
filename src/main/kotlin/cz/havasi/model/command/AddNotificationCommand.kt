@@ -7,7 +7,7 @@ import cz.havasi.model.NotificationFilter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(value = EmailNotificationCommand::class, name = "email"),
-    JsonSubTypes.Type(value = WebhookNotificationCommand::class, name = "api")
+    JsonSubTypes.Type(value = WebhookNotificationCommand::class, name = "api"),
 )
 public sealed interface AddNotificationCommand {
     public val name: String
