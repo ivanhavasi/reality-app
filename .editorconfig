@@ -1,0 +1,9 @@
+[*.{kt,kts}]
+trailing-comma-on-declaration-site = true
+trailing-comma-on-call-site = true
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+
+# because of different behavior on Windows and Linux if not specified
+# https://youtrack.jetbrains.com/issue/IDEA-266666/editorconfig-messing-up-javas-continuation-indent-of-long-lines
+ij_continuation_indent_size = 4

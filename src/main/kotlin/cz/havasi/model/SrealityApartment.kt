@@ -26,11 +26,11 @@ internal data class SrealityLocality(
     @JsonProperty("street") val street: String?,
     @JsonProperty("streetnumber") val streetNumber: String?,
     @JsonProperty("gps_lat") val latitude: Double?,
-    @JsonProperty("gps_lon") val longitude: Double?
+    @JsonProperty("gps_lon") val longitude: Double?,
 )
 
 @RegisterForReflection
 internal data class SrealityProperty(
     val name: String,
-    val value: String
+    val value: String,
 )

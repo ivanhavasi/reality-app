@@ -1,4 +1,4 @@
-package cz.havasi.service
+package cz.havasi.service.provider
 
 import cz.havasi.model.Apartment
 import cz.havasi.model.command.GetEstatesCommand

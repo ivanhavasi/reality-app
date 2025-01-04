@@ -1,4 +1,4 @@
-package cz.havasi.scheduler
+package cz.havasi.service.scheduler
 
 import cz.havasi.service.RealityService
 import io.quarkus.logging.Log

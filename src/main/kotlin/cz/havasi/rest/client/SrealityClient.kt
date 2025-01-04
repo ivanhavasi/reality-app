@@ -1,6 +1,6 @@
-package cz.havasi.sreality.client
+package cz.havasi.rest.client
 
-import cz.havasi.sreality.model.SrealitySearchResult
+import cz.havasi.rest.client.model.SrealitySearchResult
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
@@ -9,7 +9,7 @@ import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 
 @RegisterRestClient(configKey = "sreality-api")
-internal interface SrealityClient {
+internal fun interface SrealityClient {
 
     @GET
     @Path("/api/v1/estates/search")
@@ -23,6 +23,6 @@ internal interface SrealityClient {
         @QueryParam("offset") offset: Int,
         @QueryParam("lang") lang: String,
         @QueryParam("sort") sort: String,
-        @QueryParam("top_timestamp_to") topTimestampTo: Long
+        @QueryParam("top_timestamp_to") topTimestampTo: Long,
     ): SrealitySearchResult
 }

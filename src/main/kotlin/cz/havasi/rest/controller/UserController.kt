@@ -1,13 +1,13 @@
-package cz.havasi.controller
+package cz.havasi.rest.controller
 
-import cz.havasi.controller.model.ResponseId
 import cz.havasi.model.Notification
 import cz.havasi.model.User
 import cz.havasi.model.command.AddNotificationCommand
 import cz.havasi.model.command.AddUserNotificationCommand
 import cz.havasi.model.command.CreateUserCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
-import cz.havasi.service.notification.NotificationService
+import cz.havasi.rest.controller.model.ResponseId
+import cz.havasi.service.NotificationService
 import cz.havasi.service.UserService
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Consumes
@@ -45,7 +45,7 @@ internal class UserController(
     @Path("/{userId}/notifications")
     suspend fun addUserNotification(
         @PathParam("userId") userId: String,
-        addNotificationCommand: AddNotificationCommand
+        addNotificationCommand: AddNotificationCommand,
     ): Response =
         notificationService.addUserNotification(AddUserNotificationCommand(userId, addNotificationCommand))
             .let { Response.ok(ResponseId(it)).build() }

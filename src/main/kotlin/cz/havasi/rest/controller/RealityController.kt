@@ -1,4 +1,4 @@
-package cz.havasi.controller
+package cz.havasi.rest.controller
 
 import cz.havasi.service.RealityService
 import io.quarkus.logging.Log

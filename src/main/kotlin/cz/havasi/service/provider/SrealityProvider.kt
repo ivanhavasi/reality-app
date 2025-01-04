@@ -1,4 +1,4 @@
-package cz.havasi.sreality
+package cz.havasi.service.provider
 
 import SrealityApartment
 import SrealityLocality
@@ -9,15 +9,15 @@ import cz.havasi.model.CurrencyType
 import cz.havasi.model.Locality
 import cz.havasi.model.TransactionType
 import cz.havasi.model.command.GetEstatesCommand
-import cz.havasi.service.EstatesProvider
-import cz.havasi.sreality.client.SrealityClient
+import cz.havasi.rest.client.SrealityClient
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
 
 @ApplicationScoped
-public class SrealityService internal constructor( // todo, add it into a new custom module
+public class SrealityProvider internal constructor(
+    // todo, add it into a new custom module
     @RestClient private val srealityClient: SrealityClient,
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : EstatesProvider {

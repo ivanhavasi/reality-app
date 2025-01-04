@@ -1,4 +1,4 @@
-package cz.havasi.sreality.model
+package cz.havasi.rest.client.model
 
 import SrealityApartment
 import io.quarkus.runtime.annotations.RegisterForReflection
