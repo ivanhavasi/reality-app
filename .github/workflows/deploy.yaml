@@ -67,4 +67,4 @@ jobs:
               -e MONGODB_CONNECTION_STRING="${{ secrets.MONGODB_CONNECTION_STRING }}" \
               -e MAILJET_USERNAME="${{ secrets.MAILJET_USERNAME }}" \
               -e MAILJET_PASSWORD="${{ secrets.MAILJET_PASSWORD }}" \
-              ${{ secrets.ECR_REPOSITORY }}:${{ github.event.inputs.commit_hash }}
+              ${{ secrets.ECR_REPOSITORY }}:${{ inputs.commit_hash }}

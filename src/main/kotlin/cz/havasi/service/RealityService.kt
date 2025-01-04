@@ -39,7 +39,7 @@ public class RealityService(
                 .saveApartments()
                 .sendNotifications()
 
-            if (apartments.isNotEmpty()) {
+            if (apartments.isEmpty()) {
                 Log.info("No more apartments to save for provider $provider")
                 break
             }

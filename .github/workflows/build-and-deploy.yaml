@@ -10,7 +10,7 @@ jobs:
     name: Build Native Docker Image and Push to ECR
     runs-on: ubuntu-latest
     outputs:
-      commit_hash: ${{ steps.get_commit_hash.outputs.commit_hash }}
+      commit_hash: ${{ steps.output_commit_hash.outputs.commit_hash }}
 
     steps:
       - name: Checkout Code
@@ -27,14 +27,18 @@ jobs:
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY }}
 
+      - name: Output Commit Hash
+        id: output_commit_hash
+        run: echo "commit_hash=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
       - name: Get Commit Hash
         id: get_commit_hash
-        run: echo "COMMIT_HASH=${GITHUB_SHA}" >> $GITHUB_ENV
+        run: echo "commit_hash=${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: Note Commit Hash
         id: build
         run: |
-          echo "::notice title=Commit Hash::${{ env.COMMIT_HASH }}"
+          echo "::notice title=Commit Hash::${{ env.commit_hash }}"
         shell: bash
 
       - name: Set up JDK 21
@@ -51,9 +55,9 @@ jobs:
       - name: Build, Tag, and Push Docker Image
         run: |
           # Build Docker image and tag it with commit hash
-          docker build -f src/main/docker/Dockerfile.native -t reality-app:${{ env.COMMIT_HASH }} .
-          docker tag reality-app:${{ env.COMMIT_HASH }} ${{ secrets.ECR_REPOSITORY }}:${{ env.COMMIT_HASH }}
-          docker push ${{ secrets.ECR_REPOSITORY }}:${{ env.COMMIT_HASH }}
+          docker build -f src/main/docker/Dockerfile.native -t reality-app:${{ env.commit_hash }} .
+          docker tag reality-app:${{ env.commit_hash }} ${{ secrets.ECR_REPOSITORY }}:${{ env.commit_hash }}
+          docker push ${{ secrets.ECR_REPOSITORY }}:${{ env.commit_hash }}
 
   deploy-to-ec2:
     name: Deploy on EC2
@@ -69,4 +73,4 @@ jobs:
       MAILJET_USERNAME: ${{ secrets.MAILJET_USERNAME }}
       MAILJET_PASSWORD: ${{ secrets.MAILJET_PASSWORD }}
     with:
-      commit_hash: ${{ needs.build-and-push.outputs.commit_hash }} # todo this does not get used correctly
+      commit_hash: ${{ needs.build-and-push.outputs.commit_hash }}
