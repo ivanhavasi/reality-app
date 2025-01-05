@@ -1,8 +1,19 @@
 quarkus:
+  otel:
+    logs:
+      enabled: true
+    exporter:
+      otlp:
+        endpoint: "http://grafana-alloy:4317"
+        protocol: "grpc"
+    service:
+      name: "reality-app"
+    resource:
+      attributes: "deployment.environment=production"
   log:
     category:
-#      "org.mongodb":
-#        level: "WARN"
+      "org.mongo":
+        level: "WARN"
 #      "org.mongo":
 #        level: "WARN"
 #      "org.mon.dri":
