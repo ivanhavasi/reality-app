@@ -90,19 +90,26 @@ internal class MongoClientNotificationRepository(
     }
 
     /**
-     * Adds a range filter to the list of BSON filters if the number is not null.
-     * The filters are applied to fields named `filter.<name>.from` and `filter.<name>.to`.
+     * Adds a range filter to the list of BSON filters.
+     * The filters are applied to fields named `filter.<name>.from` and `filter.<name>.to`. Or when the fields do not
+     * exist.
      *
      * @param T the type of the number, a subclass of `Number`
      * @param filterList the list of BSON filters
      * @param name the filter field name, only 'size' and 'price' are supported // todo validate it, maybe add enum
      */
-    private fun <T : Number> T?.addRangeFilter(filterList: MutableList<Bson>, name: String) {
-        this?.let {
+    private fun <T : Number> T.addRangeFilter(filterList: MutableList<Bson>, name: String) {
+        let {
             filterList.add(
                 Filters.and(
-                    Filters.lte("filter.$name.from", it),
-                    Filters.gte("filter.$name.to", it),
+                    Filters.or(
+                        Filters.lte("filter.$name.from", it),
+                        Filters.exists("filter.$name.from", false),
+                    ),
+                    Filters.or(
+                        Filters.gte("filter.$name.to", it),
+                        Filters.exists("filter.$name.to", false),
+                    ),
                 ),
             )
         }
