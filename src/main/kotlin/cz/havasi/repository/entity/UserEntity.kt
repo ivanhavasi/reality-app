@@ -7,7 +7,7 @@ import java.time.OffsetDateTime
 @RegisterForReflection
 public data class UserEntity(
     val _id: ObjectId,
-    val email: String,
+    val email: String, // todo add unique index
     val username: String,
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
