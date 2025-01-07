@@ -10,10 +10,10 @@ import jakarta.ws.rs.core.MediaType
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 import org.jboss.resteasy.reactive.RestResponse
 
-@Path("/V3.1")
+@Path("/v3.1")
 @RegisterRestClient(configKey = "mailjet-api")
 @ClientBasicAuth(
-    username = "\${reality.mailjet.auth.username}", // todo not working?
+    username = "\${reality.mailjet.auth.username}",
     password = "\${reality.mailjet.auth.password}",
 )
 internal interface MailjetClient {
