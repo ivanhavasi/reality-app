@@ -14,6 +14,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.eclipse.microprofile.rest.client.inject.RestClient
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 @ApplicationScoped
 internal class EmailNotificationEventHandler(
@@ -53,19 +55,19 @@ internal class EmailNotificationEventHandler(
         listOf(EmailAddress(email = email, name = email))
 
     private fun Apartment.toSubject() =
-        "$mainCategory for $transactionType in ${locality.city}, ${locality.street} for $price CZK" // todo maybe make the enums into lower case?
+        "${mainCategory.name.lowercase()} for ${transactionType.name.lowercase()} in ${locality.city}, ${locality.street} for $price CZK" // todo maybe make the enums into lower case?
 
     private fun Apartment.toTextPart() =
         """
             Apartment Listing
 
             Name: $name
-            Price: $price $currency
-            Size: $sizeInM2 m²
-            Price per m²: $pricePerM2 $currency
+            Price: ${price.roundToLong()} $currency
+            Size: ${sizeInM2.roundToInt()} m²
+            Price per m²: ${pricePerM2?.roundToInt() ?: "Unknown"} $currency
             Location: $locality.street, $locality.city, $locality.district
             Type: $mainCategory - $subCategory
-            Transaction: $transactionType
+            For ${transactionType.name.lowercase()}
             
             Description:
             $description
@@ -142,12 +144,12 @@ internal class EmailNotificationEventHandler(
                     <img src="${images.getOrNull(0) ?: "https://picsum.photos/500/400"}" alt="Apartment Image" class="apartment-image">
                     <h2>$name</h2>
                     <div class="details">
-                        <p><strong>Price:</strong> $price $currency</p>
-                        <p><strong>Size:</strong> $sizeInM2 m²</p>
-                        <p><strong>Price per m²:</strong> $pricePerM2 $currency</p>
+                        <p><strong>Price:</strong> ${price.roundToLong()} $currency</p>
+                        <p><strong>Size:</strong> ${sizeInM2.roundToInt()} m²</p>
+                        <p><strong>Price per m²:</strong> ${pricePerM2?.roundToInt() ?: "Unknown"} $currency</p>
                         <p><strong>Location:</strong> ${locality.street}, ${locality.city}, ${locality.district}</p>
                         <p><strong>Type:</strong> $mainCategory - $subCategory</p>
-                        <p><strong>Transaction:</strong> $transactionType</p>
+                        <p>For ${transactionType.name.lowercase()}</p>
                     </div>
                     <p>$description</p>
                     <a href="$url" class="cta-button">View More Details</a>
