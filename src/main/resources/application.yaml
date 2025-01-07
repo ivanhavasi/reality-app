@@ -2,6 +2,8 @@ quarkus:
   otel:
     logs:
       enabled: true
+    metrics:
+      enabled: true
     exporter:
       otlp:
         endpoint: "http://grafana-alloy:4317"
@@ -9,7 +11,7 @@ quarkus:
     service:
       name: "reality-app"
     resource:
-      attributes: "deployment.environment=production"
+      attributes: "deployment.environment=production,service.namespace=havasi,service.instance.id=1"
   log:
     category:
       "org.mongo":
