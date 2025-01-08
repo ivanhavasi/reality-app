@@ -14,8 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.eclipse.microprofile.rest.client.inject.RestClient
-import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 
 @ApplicationScoped
 internal class EmailNotificationEventHandler(
@@ -55,16 +53,16 @@ internal class EmailNotificationEventHandler(
         listOf(EmailAddress(email = email, name = email))
 
     private fun Apartment.toSubject() =
-        "${mainCategory.name.lowercase()} for ${transactionType.name.lowercase()} in ${locality.city}, ${locality.street} for $price CZK" // todo maybe make the enums into lower case?
+        "${mainCategory.name.firstCapitalOthersLowerCase()} for ${transactionType.name.lowercase()} in ${locality.city}, ${locality.street} for ${price.formatWithSpaces()} CZK"
 
     private fun Apartment.toTextPart() =
         """
             Apartment Listing
 
             Name: $name
-            Price: ${price.roundToLong()} $currency
-            Size: ${sizeInM2.roundToInt()} m²
-            Price per m²: ${pricePerM2?.roundToInt() ?: "Unknown"} $currency
+            Price: ${price.formatWithSpaces()} $currency
+            Size: ${sizeInM2.formatWithSpaces()} m²
+            Price per m²: ${pricePerM2?.formatWithSpaces() ?: "Unknown"} $currency
             Location: $locality.street, $locality.city, $locality.district
             Type: $mainCategory - $subCategory
             For ${transactionType.name.lowercase()}
@@ -141,26 +139,37 @@ internal class EmailNotificationEventHandler(
                     <h1>Apartment Listing</h1>
                 </div>
                 <div class="content">
-                    <img src="${images.getOrNull(0) ?: "https://picsum.photos/500/400"}" alt="Apartment Image" class="apartment-image">
+                    <img src="${images.getMainImage()}" alt="Apartment Image" class="apartment-image">
                     <h2>$name</h2>
                     <div class="details">
-                        <p><strong>Price:</strong> ${price.roundToLong()} $currency</p>
-                        <p><strong>Size:</strong> ${sizeInM2.roundToInt()} m²</p>
-                        <p><strong>Price per m²:</strong> ${pricePerM2?.roundToInt() ?: "Unknown"} $currency</p>
+                        <p><strong>Price:</strong> ${price.formatWithSpaces()} $currency</p>
+                        <p><strong>Size:</strong> ${sizeInM2.toInt()} m²</p>
+                        <p><strong>Price per m²:</strong> ${pricePerM2?.formatWithSpaces() ?: "Unknown"} $currency</p>
                         <p><strong>Location:</strong> ${locality.street}, ${locality.city}, ${locality.district}</p>
                         <p><strong>Type:</strong> $mainCategory - $subCategory</p>
-                        <p>For ${transactionType.name.lowercase()}</p>
+                        <p><strong>For ${transactionType.name.lowercase()}</strong></p>
                     </div>
                     <p>$description</p>
                     <a href="$url" class="cta-button">View More Details</a>
                 </div>
                 <div class="footer">
-                    <p>&copy; 2024 Real Estate Agency. All rights reserved.</p>
+                    <p>&copy; 2024 UnReal Estate Agency. All rights reserved.</p>
                 </div>
             </div>
         </body>
         </html>
         """.trimMargin()
+
+    private fun List<String>.getMainImage() =
+        getOrNull(0)
+            ?.let { ("https:" + getOrNull(0) + "?fl=res,800,600,3|shr,,20|webp,60") }
+            ?: "https://picsum.photos/500/400"
+
+    private fun String.firstCapitalOthersLowerCase() =
+        lowercase().replaceFirstChar { it.uppercase() }
+
+    fun Double.formatWithSpaces(): String =
+        "%,.0f".format(this).replace(',', ' ')
 
     companion object {
         const val EMAIL_NAME_FROM = "Havasi Reality Watchers"
