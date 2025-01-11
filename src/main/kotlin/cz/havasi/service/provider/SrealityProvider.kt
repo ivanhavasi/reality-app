@@ -57,7 +57,7 @@ public class SrealityProvider internal constructor(
             subCategory = subCategory?.name,
             transactionType = transactionType?.toTransactionType()
                 ?: error("Sreality apartment $hashId has no transaction type"),
-            images = images,
+            images = images.map { "https:$it?fl=res,800,600,3|shr,,20|webp,60" },
         )
 
     private fun SrealityApartment.prepareUrl() =

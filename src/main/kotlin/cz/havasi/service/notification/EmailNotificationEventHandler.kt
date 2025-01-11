@@ -139,15 +139,17 @@ internal class EmailNotificationEventHandler(
                     <h1>Apartment Listing</h1>
                 </div>
                 <div class="content">
-                    <img src="${images.getMainImage()}" alt="Apartment Image" class="apartment-image">
+                    <a href="$url">
+                        <img src="${images.getMainImage()}" alt="Apartment Image" class="apartment-image">
+                    </a>
                     <h2>$name</h2>
                     <div class="details">
                         <p><strong>Price:</strong> ${price.formatWithSpaces()} $currency</p>
                         <p><strong>Size:</strong> ${sizeInM2.toInt()} m²</p>
                         <p><strong>Price per m²:</strong> ${pricePerM2?.formatWithSpaces() ?: "Unknown"} $currency</p>
                         <p><strong>Location:</strong> ${locality.street}, ${locality.city}, ${locality.district}</p>
-                        <p><strong>Type:</strong> $mainCategory - $subCategory</p>
-                        <p><strong>For ${transactionType.name.lowercase()}</strong></p>
+                        <p><strong>Type:</strong> ${mainCategory.name.firstCapitalOthersLowerCase()} - $subCategory</p>
+                        <p><strong>For ${transactionType.name.firstCapitalOthersLowerCase()}</strong></p>
                     </div>
                     <p>$description</p>
                     <a href="$url" class="cta-button">View More Details</a>
@@ -162,7 +164,6 @@ internal class EmailNotificationEventHandler(
 
     private fun List<String>.getMainImage() =
         getOrNull(0)
-            ?.let { ("https:" + getOrNull(0) + "?fl=res,800,600,3|shr,,20|webp,60") }
             ?: "https://picsum.photos/500/400"
 
     private fun String.firstCapitalOthersLowerCase() =
