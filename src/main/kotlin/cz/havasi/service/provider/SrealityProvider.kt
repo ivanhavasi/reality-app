@@ -10,6 +10,7 @@ import cz.havasi.model.Locality
 import cz.havasi.model.TransactionType
 import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.rest.client.SrealityClient
+import cz.havasi.service.constructFingerprint
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.config.inject.ConfigProperty
@@ -23,6 +24,7 @@ public class SrealityProvider internal constructor(
 
     override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> {
         Log.info("Searching sreality estates. limit ${getEstatesCommand.limit}, offset ${getEstatesCommand.offset}")
+
         return srealityClient.searchEstates(
             categoryType = 1,
             categoryMain = 1,
@@ -42,7 +44,7 @@ public class SrealityProvider internal constructor(
     private fun SrealityApartment.toApartment() =
         Apartment(
             id = hashId,
-            fingerprint = calculateFingerprint(),
+            fingerprint = constructFingerprint(BuildingType.APARTMENT, locality.toLocality(), subCategory?.name ?: ""),
             name = name,
             url = prepareUrl(),
             price = price,
@@ -60,9 +62,6 @@ public class SrealityProvider internal constructor(
 
     private fun SrealityApartment.prepareUrl() =
         "$baseUrl/detail/prodej/byt/${subCategory?.name}/${locality.citySeoName ?: ""}-${locality.citypartSeoName ?: ""}-${locality.streetSeoName ?: ""}/$hashId"
-
-    private fun SrealityApartment.calculateFingerprint() =
-        "${mainCategory?.name}-${locality.city}-${locality.street}-${images.size}" // todo, add hash function
 
     private fun SrealityLocality.toLocality() =
         Locality(

@@ -16,10 +16,6 @@ quarkus:
     category:
       "org.mongo":
         level: "WARN"
-#      "org.mongo":
-#        level: "WARN"
-#      "org.mon.dri":
-#        level: "WARN"
   mongodb:
     connection-string: ${MONGODB_CONNECTION_STRING}
   rest-client:
@@ -29,6 +25,10 @@ quarkus:
       read-timeout: 5000
     "mailjet-api":
       url: "https://api.mailjet.com"
+      connect-timeout: 3000
+      read-timeout: 5000
+    "idnes-api":
+      url: "https://reality.idnes.cz"
       connect-timeout: 3000
       read-timeout: 5000
   application:

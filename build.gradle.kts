@@ -24,6 +24,7 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-kotlin")
     implementation("io.quarkus:quarkus-opentelemetry")
+    implementation("org.jsoup:jsoup:1.18.3")
 
     implementation("io.quarkus:quarkus-mongodb-client")
     implementation("org.mongodb:bson-kotlin:5.2.1")

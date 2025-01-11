@@ -25,5 +25,5 @@ internal interface SrealityClient {
         @QueryParam("lang") lang: String,
         @QueryParam("sort") sort: String,
         @QueryParam("top_timestamp_to") topTimestampTo: Long,
-    ): SrealitySearchResult
+    ): SrealitySearchResult // todo response object wrapper
 }

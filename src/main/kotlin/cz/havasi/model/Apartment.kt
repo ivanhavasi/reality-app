@@ -1,7 +1,6 @@
 package cz.havasi.model
 
 public data class Apartment(
-    // todo maybe make it internal for main layer only
     val id: String,
     val fingerprint: String,
     val name: String,
