@@ -17,6 +17,7 @@ public sealed interface NotificationEntity {
     public val updatedAt: OffsetDateTime
     public val createdAt: OffsetDateTime
     public val userId: ObjectId
+    public val enabled: Boolean
 }
 
 // These classes have to have @BsonCreator annotation (and therefore @BsonProperty) because of the way how MongoDB
@@ -32,6 +33,7 @@ public class EmailNotificationEntity @BsonCreator constructor(
     @BsonProperty("createdAt") public override val createdAt: OffsetDateTime,
     @BsonProperty("userId") public override val userId: ObjectId,
     @BsonProperty("email") public val email: String,
+    @BsonProperty("enabled") public override val enabled: Boolean,
 ) : NotificationEntity
 
 @BsonDiscriminator(value = "api")
@@ -44,4 +46,5 @@ public class WebhookNotificationEntity @BsonCreator constructor(
     @BsonProperty("createdAt") public override val createdAt: OffsetDateTime,
     @BsonProperty("userId") public override val userId: ObjectId,
     @BsonProperty("url") public val url: String,
+    @BsonProperty("enabled") public override val enabled: Boolean,
 ) : NotificationEntity

@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 
 public class OffsetDateTimeCodec : Codec<OffsetDateTime> {
     override fun encode(writer: BsonWriter, value: OffsetDateTime, encoderContext: EncoderContext) {
-        writer.writeString(value.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+        writer.writeString(value.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)) // todo save as date, need to migrate data
     }
 
     override fun decode(reader: BsonReader, decoderContext: DecoderContext): OffsetDateTime =

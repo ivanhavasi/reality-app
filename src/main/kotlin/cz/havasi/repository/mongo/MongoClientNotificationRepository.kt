@@ -80,6 +80,7 @@ internal class MongoClientNotificationRepository(
         val filters = mutableListOf<Bson>()
         filters.add(Filters.eq("filter.buildingType", command.buildingType))
         filters.add(Filters.eq("filter.transactionType", command.transactionType))
+        filters.add(Filters.eq("enabled", true))
         command.size.addRangeFilter(filters, "size")
         command.price.addRangeFilter(filters, "price")
 
@@ -125,6 +126,7 @@ internal class MongoClientNotificationRepository(
                 createdAt = OffsetDateTime.now(UTC),
                 email = notification.email,
                 userId = ObjectId(userId),
+                enabled = true,
             )
 
             is WebhookNotificationCommand -> WebhookNotificationEntity(
@@ -135,6 +137,7 @@ internal class MongoClientNotificationRepository(
                 createdAt = OffsetDateTime.now(UTC),
                 url = notification.url,
                 userId = ObjectId(userId),
+                enabled = true,
             )
         }
 
@@ -147,6 +150,7 @@ internal class MongoClientNotificationRepository(
                 updatedAt = updatedAt,
                 createdAt = createdAt,
                 email = email,
+                enabled = enabled,
             )
 
             is WebhookNotificationEntity -> WebhookNotification(
@@ -156,6 +160,7 @@ internal class MongoClientNotificationRepository(
                 updatedAt = updatedAt,
                 createdAt = createdAt,
                 url = url,
+                enabled = enabled,
             )
         }
 }

@@ -8,6 +8,7 @@ public sealed interface Notification {
     public val filter: NotificationFilter
     public val updatedAt: OffsetDateTime
     public val createdAt: OffsetDateTime
+    public val enabled: Boolean
 }
 
 public data class EmailNotification(
@@ -17,6 +18,7 @@ public data class EmailNotification(
     override val updatedAt: OffsetDateTime,
     override val createdAt: OffsetDateTime,
     val email: String,
+    override val enabled: Boolean,
 ) : Notification
 
 public data class WebhookNotification(
@@ -26,6 +28,7 @@ public data class WebhookNotification(
     override val updatedAt: OffsetDateTime,
     override val createdAt: OffsetDateTime,
     val url: String,
+    override val enabled: Boolean,
 ) : Notification
 
 // todo add more notification types: discord integration?, sms, push notification
