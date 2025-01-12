@@ -12,6 +12,7 @@ import cz.havasi.service.util.firstCapitalOthersLowerCase
 import cz.havasi.service.util.formatToNumberWithSpaces
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,8 +22,9 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 internal class DiscordWebhookNotificationEventHandler(
     @RestClient private val discordClient: DiscordClient,
 ) : NotificationEventHandler<DiscordWebhookNotification> {
-    override fun handleNotifications(event: HandleNotificationsEvent<DiscordWebhookNotification>) {
-        Log.debug("Handling ${event.notifications.size} email notifications for apartment ${event.apartment.id}")
+
+    override fun handleNotifications(@Observes event: HandleNotificationsEvent<DiscordWebhookNotification>) {
+        Log.info("Handling ${event.notifications.size} discord notifications for apartment ${event.apartment.id}")
         CoroutineScope(Dispatchers.IO).launch {
             event.sendWebhooks()
         }
