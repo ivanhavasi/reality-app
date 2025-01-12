@@ -10,14 +10,12 @@ import cz.havasi.rest.client.IdnesClient
 import cz.havasi.service.constructFingerprint
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
-import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jsoup.Jsoup
 
 @ApplicationScoped
 internal class IdnesProvider(
     @RestClient private val idnesClient: IdnesClient,
-    @ConfigProperty(name = "quarkus.rest-client.idnes-api.url") private val baseUrl: String,
 ) : EstatesProvider {
     override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
         // idnes does not support pagination
@@ -29,11 +27,11 @@ internal class IdnesProvider(
             location = getLocation(),
             page = calculatePage(),
         )
-            .getDataFromResponse()
+            .parseDataFromResponse(getEstatesCommand)
     }
 
     // ugly html parsing
-    private fun String.getDataFromResponse(): List<Apartment> =
+    private fun String.parseDataFromResponse(getEstatesCommand: GetEstatesCommand): List<Apartment> =
         Jsoup.parse(this).select(".c-products__inner").map {
             val linkElement = it.selectFirst("a.c-products__link")
             val titleElement = it.selectFirst(".c-products__title")
@@ -67,7 +65,7 @@ internal class IdnesProvider(
 
             Apartment(
                 id = id,
-                fingerprint = constructFingerprint(BuildingType.APARTMENT, locality, subCategory ?: ""),
+                fingerprint = constructFingerprint(getEstatesCommand.type, locality, subCategory ?: ""),
                 name = name,
                 url = url,
                 price = price,
@@ -75,9 +73,9 @@ internal class IdnesProvider(
                 sizeInM2 = size,
                 currency = CurrencyType.CZK,
                 locality = locality,
-                mainCategory = BuildingType.APARTMENT,
+                mainCategory = getEstatesCommand.type,
                 subCategory = subCategory,
-                transactionType = TransactionType.SALE,
+                transactionType = getEstatesCommand.transaction,
                 images = listOf(imageUrl),
             )
         }

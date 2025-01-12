@@ -31,6 +31,10 @@ quarkus:
       url: "https://reality.idnes.cz"
       connect-timeout: 3000
       read-timeout: 5000
+    "bezrealitky-api":
+      url: "https://www.bezrealitky.cz"
+      connect-timeout: 3000
+      read-timeout: 5000
   application:
     name: "reality-app"
 

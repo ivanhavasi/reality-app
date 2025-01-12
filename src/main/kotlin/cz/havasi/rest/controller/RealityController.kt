@@ -8,15 +8,16 @@ import jakarta.ws.rs.core.MediaType
 @Path("/hello") // todo for testing purposes only
 internal class RealityController(
 //    private val idnesProvider: IdnesProvider,
+//    private val bezrealitkyProvider: BezrealitkyProvider,
 ) {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     suspend fun searchEstates(): String {
-//        idnesProvider.getEstates(
+//        bezrealitkyProvider.getEstates(
 //            GetEstatesCommand(
 //                transaction = TransactionType.SALE,
 //                type = BuildingType.APARTMENT,
-//                offset = 22,
+//                offset = 0,
 //                limit = 22,
 //            ),
 //        )

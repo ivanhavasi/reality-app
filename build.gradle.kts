@@ -48,9 +48,3 @@ tasks.test {
 kotlin {
     jvmToolchain(21)
 }
-
-//tasks.quarkusDev { // for live reload
-//    compilerOptions {
-//        compiler("kotlin").args(listOf("-Werror"))
-//    }
-//}
