@@ -48,3 +48,18 @@ public class WebhookNotificationEntity @BsonCreator constructor(
     @BsonProperty("url") public val url: String,
     @BsonProperty("enabled") public override val enabled: Boolean,
 ) : NotificationEntity
+
+@BsonDiscriminator(value = "discord")
+@RegisterForReflection
+public class DiscordWebhookNotificationEntity @BsonCreator constructor(
+    @BsonId @BsonProperty("_id") public val id: ObjectId,
+    @BsonProperty("name") public override val name: String,
+    @BsonProperty("filter") public override val filter: NotificationFilter,
+    @BsonProperty("updatedAt") public override val updatedAt: OffsetDateTime,
+    @BsonProperty("createdAt") public override val createdAt: OffsetDateTime,
+    @BsonProperty("userId") public override val userId: ObjectId,
+    @BsonProperty("webhookId") public val webhookId: String,
+    @BsonProperty("token") public val token: String,
+    @BsonProperty("enabled") public override val enabled: Boolean,
+) : NotificationEntity
+

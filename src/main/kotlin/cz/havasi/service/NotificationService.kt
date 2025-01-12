@@ -1,6 +1,7 @@
 package cz.havasi.service
 
 import cz.havasi.model.Apartment
+import cz.havasi.model.DiscordWebhookNotification
 import cz.havasi.model.EmailNotification
 import cz.havasi.model.Notification
 import cz.havasi.model.WebhookNotification
@@ -18,6 +19,7 @@ public class NotificationService(
     private val notificationRepository: NotificationRepository,
     private val emailNotificationSender: Event<HandleNotificationsEvent<EmailNotification>>,
     private val webhookNotificationSender: Event<HandleNotificationsEvent<WebhookNotification>>,
+    private val discordWebhookNotificationSender: Event<HandleNotificationsEvent<DiscordWebhookNotification>>,
 ) {
     public suspend fun sendNotificationsForApartments(apartments: List<Apartment>) {
         apartments.forEach { apartment ->
@@ -45,12 +47,14 @@ public class NotificationService(
     private fun List<Notification>.sendNotifications(apartment: Apartment) {
         val emailNotifications = mutableListOf<EmailNotification>()
         val webhookNotifications = mutableListOf<WebhookNotification>()
+        val discordNotifications = mutableListOf<DiscordWebhookNotification>()
 
         // sort notifications into correct lists
         forEach { notification ->
             when (notification) {
                 is EmailNotification -> emailNotifications.add(notification)
                 is WebhookNotification -> webhookNotifications.add(notification)
+                is DiscordWebhookNotification -> discordNotifications.add(notification)
             }
         }
 
@@ -61,6 +65,9 @@ public class NotificationService(
         }
         if (webhookNotifications.isNotEmpty()) {
             webhookNotificationSender.fire(HandleNotificationsEvent(apartment, webhookNotifications))
+        }
+        if (discordNotifications.isNotEmpty()) {
+            discordWebhookNotificationSender.fire(HandleNotificationsEvent(apartment, discordNotifications))
         }
     }
 

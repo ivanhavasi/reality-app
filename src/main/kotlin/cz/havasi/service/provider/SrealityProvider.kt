@@ -10,7 +10,7 @@ import cz.havasi.model.Locality
 import cz.havasi.model.TransactionType
 import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.rest.client.SrealityClient
-import cz.havasi.service.constructFingerprint
+import cz.havasi.service.util.constructFingerprint
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.config.inject.ConfigProperty

@@ -31,4 +31,13 @@ public data class WebhookNotification(
     override val enabled: Boolean,
 ) : Notification
 
-// todo add more notification types: discord integration?, sms, push notification
+public data class DiscordWebhookNotification(
+    override val id: String,
+    override val name: String,
+    override val filter: NotificationFilter,
+    override val updatedAt: OffsetDateTime,
+    override val createdAt: OffsetDateTime,
+    val webhookId: String,
+    val token: String, // todo hash with secret
+    override val enabled: Boolean,
+) : Notification

@@ -35,6 +35,10 @@ quarkus:
       url: "https://www.bezrealitky.cz"
       connect-timeout: 3000
       read-timeout: 5000
+    "discord-api":
+      url: "https://discord.com"
+      connect-timeout: 3000
+      read-timeout: 5000
   application:
     name: "reality-app"
 

@@ -1,4 +1,4 @@
-package cz.havasi.service
+package cz.havasi.service.util
 
 import cz.havasi.model.BuildingType
 import cz.havasi.model.Locality
@@ -9,3 +9,4 @@ public fun constructFingerprint(
     locality: Locality,
     subCategory: String,
 ): String = "${buildingType.name.lowercase(Locale.FRANCE)}-${locality.city}-${locality.street ?: ""}-$subCategory"
+// todo create a new fingerprint with price and hash it

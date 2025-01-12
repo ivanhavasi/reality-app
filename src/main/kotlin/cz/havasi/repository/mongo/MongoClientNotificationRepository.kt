@@ -1,10 +1,12 @@
 package cz.havasi.repository.mongo
 
 import com.mongodb.client.model.Filters
+import cz.havasi.model.DiscordWebhookNotification
 import cz.havasi.model.EmailNotification
 import cz.havasi.model.Notification
 import cz.havasi.model.WebhookNotification
 import cz.havasi.model.command.AddUserNotificationCommand
+import cz.havasi.model.command.DiscordWebhookNotificationCommand
 import cz.havasi.model.command.EmailNotificationCommand
 import cz.havasi.model.command.FindNotificationsForFilterCommand
 import cz.havasi.model.command.RemoveUserNotificationCommand
@@ -12,6 +14,7 @@ import cz.havasi.model.command.WebhookNotificationCommand
 import cz.havasi.repository.DatabaseNames.DB_NAME
 import cz.havasi.repository.DatabaseNames.NOTIFICATION_COLLECTION_NAME
 import cz.havasi.repository.NotificationRepository
+import cz.havasi.repository.entity.DiscordWebhookNotificationEntity
 import cz.havasi.repository.entity.EmailNotificationEntity
 import cz.havasi.repository.entity.NotificationEntity
 import cz.havasi.repository.entity.WebhookNotificationEntity
@@ -139,6 +142,18 @@ internal class MongoClientNotificationRepository(
                 userId = ObjectId(userId),
                 enabled = true,
             )
+
+            is DiscordWebhookNotificationCommand -> DiscordWebhookNotificationEntity(
+                id = ObjectId.get(),
+                name = notification.name,
+                filter = notification.filter,
+                updatedAt = OffsetDateTime.now(UTC),
+                createdAt = OffsetDateTime.now(UTC),
+                webhookId = notification.webhookId,
+                token = notification.token,
+                userId = ObjectId(userId),
+                enabled = true,
+            )
         }
 
     private fun NotificationEntity.toModel() =
@@ -160,6 +175,17 @@ internal class MongoClientNotificationRepository(
                 updatedAt = updatedAt,
                 createdAt = createdAt,
                 url = url,
+                enabled = enabled,
+            )
+
+            is DiscordWebhookNotificationEntity -> DiscordWebhookNotification(
+                id = id.toHexString(),
+                name = name,
+                filter = filter,
+                updatedAt = updatedAt,
+                createdAt = createdAt,
+                webhookId = webhookId,
+                token = token,
                 enabled = enabled,
             )
         }

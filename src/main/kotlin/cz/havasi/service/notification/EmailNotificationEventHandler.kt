@@ -7,6 +7,8 @@ import cz.havasi.rest.client.MailjetClient
 import cz.havasi.rest.client.model.EmailAddress
 import cz.havasi.rest.client.model.MailjetEmail
 import cz.havasi.rest.client.model.MailjetEmailWrapper
+import cz.havasi.service.util.firstCapitalOthersLowerCase
+import cz.havasi.service.util.formatToNumberWithSpaces
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
@@ -22,24 +24,16 @@ internal class EmailNotificationEventHandler(
 ) : NotificationEventHandler<EmailNotification> {
 
     override fun handleNotifications(@Observes event: HandleNotificationsEvent<EmailNotification>) {
-        Log.info("Handling ${event.notifications.size} email notifications for apartment ${event.apartment.id}")
+        Log.debug("Handling ${event.notifications.size} email notifications for apartment ${event.apartment.id}")
         CoroutineScope(Dispatchers.IO).launch {
             event.sendEmails()
         }
     }
 
     private suspend fun HandleNotificationsEvent<EmailNotification>.sendEmails(): Unit {
-        val emails = notifications.map { notification ->
-            MailjetEmail(
-                from = EMAIL_FROM,
-                to = notification.toEmailTo(),
-                subject = apartment.toSubject(),
-                textPart = apartment.toTextPart(),
-                htmlPart = apartment.toHtmlPart(),
-            )
-        }
-
+        val emails = notifications.mapToEmail(apartment)
         Log.info("Sending ${emails.size} emails")
+
         try {
             val response = mailjetClient.sendEmails(MailjetEmailWrapper(messages = emails))
             Log.info("Emails response status: ${response.status} for ${emails.size} emails")
@@ -49,20 +43,30 @@ internal class EmailNotificationEventHandler(
         }
     }
 
+    private fun List<EmailNotification>.mapToEmail(apartment: Apartment) = map { notification ->
+        MailjetEmail(
+            from = EMAIL_FROM,
+            to = notification.toEmailTo(),
+            subject = apartment.toSubject(),
+            textPart = apartment.toTextPart(),
+            htmlPart = apartment.toHtmlPart(),
+        )
+    }
+
     private fun EmailNotification.toEmailTo() =
         listOf(EmailAddress(email = email, name = email))
 
     private fun Apartment.toSubject() =
-        "${mainCategory.name.firstCapitalOthersLowerCase()} for ${transactionType.name.lowercase()} in ${locality.city}, ${locality.street} for ${price.formatWithSpaces()} CZK"
+        "${mainCategory.name.firstCapitalOthersLowerCase()} for ${transactionType.name.lowercase()} in ${locality.city}, ${locality.street} for ${price.formatToNumberWithSpaces()} CZK"
 
     private fun Apartment.toTextPart() =
         """
             Apartment Listing
 
             Name: $name
-            Price: ${price.formatWithSpaces()} $currency
-            Size: ${sizeInM2.formatWithSpaces()} m²
-            Price per m²: ${pricePerM2?.formatWithSpaces() ?: "Unknown"} $currency
+            Price: ${price.formatToNumberWithSpaces()} $currency
+            Size: ${sizeInM2.formatToNumberWithSpaces()} m²
+            Price per m²: ${pricePerM2?.formatToNumberWithSpaces() ?: "Unknown"} $currency
             Location: $locality.street, $locality.city, $locality.district
             Type: $mainCategory - $subCategory
             For ${transactionType.name.lowercase()}
@@ -144,9 +148,9 @@ internal class EmailNotificationEventHandler(
                     </a>
                     <h2>$name</h2>
                     <div class="details">
-                        <p><strong>Price:</strong> ${price.formatWithSpaces()} $currency</p>
+                        <p><strong>Price:</strong> ${price.formatToNumberWithSpaces()} $currency</p>
                         <p><strong>Size:</strong> ${sizeInM2.toInt()} m²</p>
-                        <p><strong>Price per m²:</strong> ${pricePerM2?.formatWithSpaces() ?: "Unknown"} $currency</p>
+                        <p><strong>Price per m²:</strong> ${pricePerM2?.formatToNumberWithSpaces() ?: "Unknown"} $currency</p>
                         <p><strong>Location:</strong> ${locality.street}, ${locality.city}, ${locality.district}</p>
                         <p><strong>Type:</strong> ${mainCategory.name.firstCapitalOthersLowerCase()} - $subCategory</p>
                         <p><strong>For ${transactionType.name.firstCapitalOthersLowerCase()}</strong></p>
@@ -165,12 +169,6 @@ internal class EmailNotificationEventHandler(
     private fun List<String>.getMainImage() =
         getOrNull(0)
             ?: "https://picsum.photos/500/400"
-
-    private fun String.firstCapitalOthersLowerCase() =
-        lowercase().replaceFirstChar { it.uppercase() }
-
-    fun Double.formatWithSpaces(): String =
-        "%,.0f".format(this).replace(',', ' ')
 
     companion object {
         const val EMAIL_NAME_FROM = "Havasi Reality Watchers"
