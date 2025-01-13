@@ -1,4 +1,8 @@
 quarkus:
+  vaadin:
+    ui:
+      themes: "lumo"
+      enable-default-frontend-resources: true
   otel:
     logs:
       enabled: true

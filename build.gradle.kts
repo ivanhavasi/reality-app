@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.0.21"
     id("io.quarkus")
+    id("com.vaadin")
 }
 
 group = "cz.havasi"
@@ -35,6 +36,13 @@ dependencies {
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+
+    // frontend - vaadin
+    implementation(enforcedPlatform("com.vaadin:vaadin-bom:24.6.1"))
+    implementation("com.vaadin:vaadin-quarkus-extension:24.6.1") // bom not working?
+    implementation("com.vaadin:vaadin-core") {
+        exclude(group = "com.vaadin", module = "hilla-dev")
+    }
 }
 
 kotlin {
