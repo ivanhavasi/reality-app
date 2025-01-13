@@ -22,6 +22,17 @@ internal class BezrealitkyProvider(
     @ConfigProperty(name = "quarkus.rest-client.bezrealitky-api.url") private val baseUrl: String,
 ) : EstatesProvider {
     override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
+        try {
+            callClient()
+        } catch (e: Exception) {
+            Log.error("Error while fetching Bezrealitky data, page ${calculatePage()}")
+            Log.error(e.message)
+            Log.error(e.stackTraceToString())
+            emptyList()
+        }
+    }
+
+    private suspend fun GetEstatesCommand.callClient(): List<Apartment> =
         // bezrealitky doesn't support pagination, same as iDnes
         bezrealitkyClient.searchEstates(
             offerType = prepareOfferType(),
@@ -32,8 +43,7 @@ internal class BezrealitkyProvider(
             location = "exact",
             page = calculatePage(),
         )
-            .parseDataFromResponse(getEstatesCommand)
-    }
+            .parseDataFromResponse(this)
 
     // ugly html parsing
     private fun String.parseDataFromResponse(getEstatesCommand: GetEstatesCommand): List<Apartment> =

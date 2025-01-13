@@ -18,6 +18,17 @@ internal class IdnesProvider(
     @RestClient private val idnesClient: IdnesClient,
 ) : EstatesProvider {
     override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
+        try {
+            callClient()
+        } catch (e: Exception) {
+            Log.error("Error while fetching iDnes data, page ${calculatePage()}")
+            Log.error(e.message)
+            Log.error(e.stackTraceToString())
+            emptyList()
+        }
+    }
+
+    private suspend fun GetEstatesCommand.callClient(): List<Apartment> =
         // idnes does not support pagination
         // you can only do other pages
         // always returns 21 results
@@ -27,8 +38,7 @@ internal class IdnesProvider(
             location = getLocation(),
             page = calculatePage(),
         )
-            .parseDataFromResponse(getEstatesCommand)
-    }
+            .parseDataFromResponse(this)
 
     // ugly html parsing
     private fun String.parseDataFromResponse(getEstatesCommand: GetEstatesCommand): List<Apartment> =

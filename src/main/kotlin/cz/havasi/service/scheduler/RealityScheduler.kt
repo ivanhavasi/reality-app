@@ -21,7 +21,7 @@ internal class RealityScheduler(
             realityService.fetchAndSaveApartmentsForSale()
         } catch (e: Exception) {
             Log.error(e.message)
-            Log.error(e.stackTrace)
+            Log.error(e.stackTraceToString())
             throw e
         }
 

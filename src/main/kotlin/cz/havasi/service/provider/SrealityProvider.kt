@@ -22,16 +22,26 @@ public class SrealityProvider internal constructor(
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : EstatesProvider {
 
-    override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> {
-        Log.info("Searching sreality estates. limit ${getEstatesCommand.limit}, offset ${getEstatesCommand.offset}")
+    override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
+        try {
+            Log.debug("Searching sreality estates. limit ${getEstatesCommand.limit}, offset ${getEstatesCommand.offset}")
+            callClient()
+        } catch (e: Exception) {
+            Log.error("Error while fetching sreality data, limit $limit, offset $offset")
+            Log.error(e.message)
+            Log.error(e.stackTraceToString())
+            emptyList()
+        }
+    }
 
-        return srealityClient.searchEstates(
+    private suspend fun GetEstatesCommand.callClient(): List<Apartment> =
+        srealityClient.searchEstates(
             categoryType = 1,
             categoryMain = 1,
             localityCountryId = 112,
             localityRegionId = 10,
-            limit = getEstatesCommand.limit,
-            offset = getEstatesCommand.offset,
+            limit = limit,
+            offset = offset,
             lang = "cs",
             sort = "-date",
             topTimestampTo = System.currentTimeMillis(),
@@ -39,7 +49,6 @@ public class SrealityProvider internal constructor(
             .results
             .also { Log.info("Sreality estates found size: ${it.size}") }
             .map { it.toApartment() }
-    }
 
     private fun SrealityApartment.toApartment() =
         Apartment(
