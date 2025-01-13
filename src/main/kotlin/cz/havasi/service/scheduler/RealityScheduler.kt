@@ -17,7 +17,13 @@ internal class RealityScheduler(
         Log.info("Scheduled task started")
 
         waitForRandomInterval()
-        realityService.fetchAndSaveApartmentsForSale()
+        try {
+            realityService.fetchAndSaveApartmentsForSale()
+        } catch (e: Exception) {
+            Log.error(e.message)
+            Log.error(e.stackTrace)
+            throw e
+        }
 
         Log.info("Scheduled task finished")
     }
