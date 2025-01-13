@@ -7,9 +7,12 @@ import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.service.provider.EstatesProvider
 import io.quarkus.arc.All
+
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 @ApplicationScoped
@@ -23,9 +26,9 @@ public class RealityService(
         Log.debug("Estate providers: $estateProviders")
     }
 
-    public suspend fun fetchAndSaveApartmentsForSale(): Unit {
+    public suspend fun fetchAndSaveApartmentsForSale(): Unit = coroutineScope {
         Log.info("Fetching and saving apartments for sale")
-        estateProviders.forEach { fetchAndSaveApartmentsForProvider(it) }
+        estateProviders.forEach { launch { fetchAndSaveApartmentsForProvider(it) } }
     }
 
     private suspend fun fetchAndSaveApartmentsForProvider(provider: EstatesProvider) {
