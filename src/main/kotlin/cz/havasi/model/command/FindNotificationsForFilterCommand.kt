@@ -8,4 +8,5 @@ public data class FindNotificationsForFilterCommand(
     val transactionType: TransactionType,
     val size: Double,
     val price: Int,
+    val subTypes: List<String>,
 )

@@ -5,6 +5,7 @@ public data class NotificationFilter(
     val transactionType: TransactionType,
     val size: FilterRange<Double>?,
     val price: FilterRange<Int>?,
+    val subTypes: List<String>?,
 )
 
 public data class FilterRange<T : Number>(

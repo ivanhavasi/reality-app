@@ -86,6 +86,13 @@ internal class MongoClientNotificationRepository(
         filters.add(Filters.eq("enabled", true))
         command.size.addRangeFilter(filters, "size")
         command.price.addRangeFilter(filters, "price")
+        filters.add(
+            Filters.or(
+                Filters.not(Filters.exists("filter.subTypes")),
+                Filters.`in`("filter.subTypes", command.subTypes),
+            ),
+        )
+
 
         return mongoCollection.find(Filters.and(filters), NotificationEntity::class.java)
             .asFlow()

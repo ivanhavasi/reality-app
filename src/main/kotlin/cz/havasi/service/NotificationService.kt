@@ -77,5 +77,6 @@ public class NotificationService(
             transactionType = transactionType,
             price = price.toInt(),
             size = sizeInM2,
+            subTypes = if (subCategory != null) listOf(subCategory) else emptyList(),
         )
 }
