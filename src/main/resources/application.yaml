@@ -1,4 +1,10 @@
 quarkus:
+  oidc:
+    application-type: service
+    provider: google
+    client-id: ${GOOGLE_CLIENT_ID}
+    authentication:
+      user-info-required: true
   otel:
     logs:
       enabled: true

@@ -7,7 +7,6 @@ import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.service.provider.EstatesProvider
 import io.quarkus.arc.All
-
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import kotlinx.coroutines.coroutineScope
@@ -21,7 +20,6 @@ public class RealityService(
     private val notificationService: NotificationService,
     @All private val estateProviders: MutableList<EstatesProvider>,
 ) {
-
     init {
         Log.debug("Estate providers: $estateProviders")
     }
@@ -81,7 +79,6 @@ public class RealityService(
     private suspend fun List<Apartment>.saveApartments(): List<Apartment> = also {
         if (isNotEmpty()) {
             apartmentRepository.saveAll(this)
-            true
         }
     }
 }

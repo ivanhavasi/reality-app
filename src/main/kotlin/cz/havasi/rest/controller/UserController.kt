@@ -9,6 +9,7 @@ import cz.havasi.model.command.RemoveUserNotificationCommand
 import cz.havasi.rest.controller.model.ResponseId
 import cz.havasi.service.NotificationService
 import cz.havasi.service.UserService
+import jakarta.annotation.security.RolesAllowed
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Consumes
 import jakarta.ws.rs.DELETE
@@ -23,27 +24,29 @@ import jakarta.ws.rs.core.Response
 
 @Path("/users")
 @ApplicationScoped
-internal class UserController(
+internal open class UserController(
     private val userService: UserService,
     private val notificationService: NotificationService,
 ) {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    suspend fun createUser(createUserCommand: CreateUserCommand): Response =
+    open suspend fun createUser(createUserCommand: CreateUserCommand): Response =
         userService
             .createUser(createUserCommand)
             .let { Response.ok(ResponseId(it)).build() }
 
     @GET
     @Path("/{id}")
+    @RolesAllowed("USER")
     @Produces(MediaType.APPLICATION_JSON)
-    suspend fun getUserById(id: String): User =
+    open suspend fun getUserById(id: String): User =
         userService.getUserById(id)
 
     @POST
+    @RolesAllowed("USER")
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{userId}/notifications")
-    suspend fun addUserNotification(
+    open suspend fun addUserNotification(
         @PathParam("userId") userId: String,
         addNotificationCommand: AddNotificationCommand,
     ): Response =
@@ -51,18 +54,20 @@ internal class UserController(
             .let { Response.ok(ResponseId(it)).build() }
 
     @GET
+    @RolesAllowed("USER")
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{userId}/notifications")
-    suspend fun getUserNotifications(
+    open suspend fun getUserNotifications(
         @PathParam("userId") userId: String,
     ): List<Notification> =
         notificationService
             .getUserNotifications(userId)
 
     @DELETE
+    @RolesAllowed("USER")
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{userId}/notifications/{notificationId}")
-    suspend fun removeUserNotification(
+    open suspend fun removeUserNotification(
         @PathParam("userId") userId: String,
         @PathParam("notificationId") notificationId: String,
     ): Response =
