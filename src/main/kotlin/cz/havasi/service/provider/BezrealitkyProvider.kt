@@ -1,11 +1,8 @@
 package cz.havasi.service.provider
 
-import cz.havasi.model.Apartment
-import cz.havasi.model.BuildingType
-import cz.havasi.model.CurrencyType
-import cz.havasi.model.Locality
-import cz.havasi.model.TransactionType
+import cz.havasi.model.*
 import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.enum.ProviderType
 import cz.havasi.rest.client.BezrealitkyClient
 import cz.havasi.service.util.constructFingerprint
 import io.quarkus.logging.Log
@@ -97,6 +94,7 @@ internal class BezrealitkyProvider(
                 mainCategory = getEstatesCommand.type,
                 subCategory = subCategory,
                 transactionType = getEstatesCommand.transaction,
+                provider = ProviderType.BEZREALITKY,
             )
         }
 

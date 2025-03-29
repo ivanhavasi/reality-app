@@ -3,12 +3,9 @@ package cz.havasi.service.provider
 import SrealityApartment
 import SrealityLocality
 import SrealityProperty
-import cz.havasi.model.Apartment
-import cz.havasi.model.BuildingType
-import cz.havasi.model.CurrencyType
-import cz.havasi.model.Locality
-import cz.havasi.model.TransactionType
+import cz.havasi.model.*
 import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.enum.ProviderType
 import cz.havasi.rest.client.SrealityClient
 import cz.havasi.service.util.constructFingerprint
 import io.quarkus.logging.Log
@@ -21,7 +18,6 @@ public class SrealityProvider internal constructor(
     @RestClient private val srealityClient: SrealityClient,
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : EstatesProvider {
-
     override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
         try {
             Log.debug("Searching sreality estates. limit ${getEstatesCommand.limit}, offset ${getEstatesCommand.offset}")
@@ -67,6 +63,7 @@ public class SrealityProvider internal constructor(
             transactionType = transactionType?.toTransactionType()
                 ?: error("Sreality apartment $hashId has no transaction type"),
             images = images.map { "https:$it?fl=res,800,600,3|shr,,20|webp,60" },
+            provider = ProviderType.SREALITY,
         )
 
     private fun SrealityApartment.prepareUrl() =

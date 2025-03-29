@@ -8,4 +8,5 @@ public interface ApartmentRepository {
     public suspend fun saveAll(apartments: List<Apartment>): List<ObjectId>
 
     public suspend fun existsByIdOrFingerprint(id: String, fingerprint: String): Boolean
+    public suspend fun findByIdOrFingerprint(id: String, fingerprint: String): Apartment?
 }

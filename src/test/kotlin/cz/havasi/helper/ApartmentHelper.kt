@@ -38,6 +38,7 @@ object ApartmentHelper {
             "https://example.com/image1.jpg",
         ),
         description = "Beautiful apartment in the heart of Prague",
+        duplicates = listOf(),
         createdAt = time,
         updatedAt = time,
     )
@@ -66,5 +67,6 @@ object ApartmentHelper {
             "https://example.com/image1.jpg",
         ),
         description = "Beautiful apartment in the heart of Prague",
+        duplicates = listOf(),
     )
 }

@@ -43,8 +43,8 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
         val findById = repository.findByIdOrFingerprint(existingApartment.id, "wrongFingerprint")
         val findByBoth = repository.findByIdOrFingerprint(existingApartment.id, existingApartment.fingerprint)
 
-        assertTrue(findByFingerprint.id == existingApartment.id) { "Apartment not found by fingerprint" }
-        assertTrue(findById.id == existingApartment.id) { "Apartment not found by id" }
-        assertTrue(findByBoth.id == existingApartment.id) { "Apartment not found by fingerprint or id" }
+        assertTrue(findByFingerprint?.id == existingApartment.id) { "Apartment not found by fingerprint" }
+        assertTrue(findById?.id == existingApartment.id) { "Apartment not found by id" }
+        assertTrue(findByBoth?.id == existingApartment.id) { "Apartment not found by fingerprint or id" }
     }
 }

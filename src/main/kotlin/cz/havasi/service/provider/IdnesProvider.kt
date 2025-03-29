@@ -1,13 +1,11 @@
 package cz.havasi.service.provider
 
-import cz.havasi.model.Apartment
-import cz.havasi.model.BuildingType
-import cz.havasi.model.CurrencyType
-import cz.havasi.model.Locality
-import cz.havasi.model.TransactionType
+import cz.havasi.model.*
 import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.enum.ProviderType
 import cz.havasi.rest.client.IdnesClient
 import cz.havasi.service.util.constructFingerprint
+import cz.havasi.service.util.firstCapitalOthersLowerCase
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.rest.client.inject.RestClient
@@ -29,8 +27,8 @@ internal class IdnesProvider(
     }
 
     private suspend fun GetEstatesCommand.callClient(): List<Apartment> =
-        // idnes does not support pagination
-        // you can only do other pages
+    // idnes does not support pagination
+    // you can only do other pages
         // always returns 21 results
         idnesClient.searchEstatesForPageZero(
             transactionType = getTransactionType(),
@@ -48,7 +46,7 @@ internal class IdnesProvider(
 
             val splitUrl = linkElement?.attr("href")?.split("/") ?: emptyList()
             val id = splitUrl.getOrNull(splitUrl.lastIndex - 1) ?: logMissingData("id")
-            val name = titleElement?.text() ?: logMissingData("name")
+            val name = titleElement?.text()?.firstCapitalOthersLowerCase() ?: logMissingData("name")
             val url = linkElement?.attr("href") ?: logMissingData("url")
             val price = it.selectFirst(".c-products__price strong")?.text()?.replace("Kč", "")?.replace(" ", "")?.trim()
                 ?.toDoubleOrNull() ?: 0.0
@@ -87,6 +85,7 @@ internal class IdnesProvider(
                 subCategory = subCategory,
                 transactionType = getEstatesCommand.transaction,
                 images = listOf(imageUrl),
+                provider = ProviderType.IDNES,
             )
         }
 

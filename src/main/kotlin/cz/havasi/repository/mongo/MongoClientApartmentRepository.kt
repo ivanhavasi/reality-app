@@ -1,13 +1,15 @@
 package cz.havasi.repository.mongo
 
 import com.mongodb.client.model.Filters
-import cz.havasi.model.Apartment
-import cz.havasi.model.Locality
+import cz.havasi.model.*
+import cz.havasi.model.enum.ProviderType
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.repository.DatabaseNames.APARTMENT_COLLECTION_NAME
 import cz.havasi.repository.DatabaseNames.DB_NAME
+import cz.havasi.repository.entity.ApartmentDuplicateEntity
 import cz.havasi.repository.entity.ApartmentEntity
 import cz.havasi.repository.entity.LocalityEntity
+import cz.havasi.repository.entity.enum.ProviderTypeEntity
 import io.quarkus.mongodb.reactive.ReactiveMongoClient
 import io.smallrye.mutiny.coroutines.asFlow
 import io.smallrye.mutiny.coroutines.awaitSuspending
@@ -50,7 +52,7 @@ internal class MongoClientApartmentRepository(
     override suspend fun existsByIdOrFingerprint(id: String, fingerprint: String): Boolean {
         val filters = mutableListOf<Bson>()
         filters.add(Filters.eq("externalId", id))
-        filters.add(Filters.eq("fingerprint", id))
+        filters.add(Filters.eq("fingerprint", fingerprint))
 
         return mongoCollection
             .find(Filters.or(filters), ApartmentEntity::class.java)
@@ -58,6 +60,56 @@ internal class MongoClientApartmentRepository(
             .firstOrNull()
             .let { it != null }
     }
+
+    override suspend fun findByIdOrFingerprint(id: String, fingerprint: String): Apartment? {
+        val filters = mutableListOf<Bson>()
+        filters.add(Filters.eq("externalId", id))
+        filters.add(Filters.eq("fingerprint", fingerprint))
+
+        return mongoCollection.find(Filters.or(filters), ApartmentEntity::class.java)
+            .asFlow()
+            .firstOrNull()
+            ?.toModel()
+    }
+
+    private fun ApartmentEntity.toModel() =
+        Apartment(
+            id = externalId,
+            fingerprint = fingerprint,
+            locality = locality.toModel(),
+            price = price,
+            name = name,
+            url = url,
+            pricePerM2 = pricePerM2,
+            sizeInM2 = sizeInM2,
+            currency = CurrencyType.valueOf(currency),
+            mainCategory = BuildingType.valueOf(mainCategory),
+            subCategory = subCategory,
+            transactionType = TransactionType.valueOf(transactionType),
+            images = images,
+            description = description,
+            provider = ProviderType.valueOf(provider.name),
+            duplicates = duplicates.map { it.toModel() },
+        )
+
+    private fun ApartmentDuplicateEntity.toModel() =
+        ApartmentDuplicate(
+            url = url,
+            price = price,
+            pricePerM2 = pricePerM2,
+            images = images,
+            provider = ProviderType.valueOf(provider.name),
+        )
+
+    private fun LocalityEntity.toModel() =
+        Locality(
+            city = city,
+            district = district,
+            street = street,
+            streetNumber = streetNumber,
+            latitude = latitude,
+            longitude = longitude,
+        )
 
     private fun Apartment.toEntity() =
         ApartmentEntity(
@@ -76,8 +128,19 @@ internal class MongoClientApartmentRepository(
             transactionType = transactionType.name,
             images = images,
             description = description,
+            provider = ProviderTypeEntity.valueOf(provider.name),
+            duplicates = duplicates.map { it.toEntity() },
             createdAt = OffsetDateTime.now(),
             updatedAt = OffsetDateTime.now(),
+        )
+
+    private fun ApartmentDuplicate.toEntity() =
+        ApartmentDuplicateEntity(
+            url = url,
+            price = price,
+            pricePerM2 = pricePerM2,
+            images = images,
+            provider = ProviderTypeEntity.valueOf(provider.name),
         )
 
     private fun Locality.toEntity() =

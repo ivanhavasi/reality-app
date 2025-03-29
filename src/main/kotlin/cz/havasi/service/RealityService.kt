@@ -1,6 +1,7 @@
 package cz.havasi.service
 
 import cz.havasi.model.Apartment
+import cz.havasi.model.ApartmentDuplicate
 import cz.havasi.model.BuildingType
 import cz.havasi.model.TransactionType
 import cz.havasi.model.command.GetEstatesCommand
@@ -59,12 +60,14 @@ public class RealityService(
         )
 
         val filteredApartments = apartments
-            .filter {
-                !apartmentRepository.existsByIdOrFingerprint(
-                    it.id,
-                    it.fingerprint,
-                )
-            } // todo, just update date in already existant apartments?
+            .mapNotNull {
+                val duplicateApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
+                if (duplicateApartment != null) {
+                    it.updateWithDuplicateIfNeeded(duplicateApartment)
+                } else {
+                    it
+                }
+            }
 
         Log.info("Saving ${filteredApartments.size} apartments (vs ${apartments.size} fetched)")
         return filteredApartments
@@ -81,4 +84,22 @@ public class RealityService(
             apartmentRepository.saveAll(this)
         }
     }
+
+    private fun Apartment.updateWithDuplicateIfNeeded(duplicateApartment: Apartment): Apartment? {
+        if (price == duplicateApartment.price) { // ignore, if price is the same
+            null
+        }
+        val duplicateList = duplicates.toMutableList()
+        duplicateList.add(duplicateApartment.toDuplicate())
+        return this.copy(duplicates = duplicateList)
+    }
+
+    private fun Apartment.toDuplicate() =
+        ApartmentDuplicate(
+            url = url,
+            price = price,
+            pricePerM2 = pricePerM2,
+            images = images,
+            provider = provider,
+        )
 }

@@ -1,5 +1,7 @@
 package cz.havasi.repository.entity
 
+import cz.havasi.model.CurrencyType
+import cz.havasi.repository.entity.enum.ProviderTypeEntity
 import io.quarkus.runtime.annotations.RegisterForReflection
 import org.bson.types.ObjectId
 import java.time.OffsetDateTime
@@ -21,8 +23,18 @@ public data class ApartmentEntity(
     val transactionType: String,
     val images: List<String> = emptyList(),
     val description: String? = null,
+    val provider: ProviderTypeEntity = ProviderTypeEntity.UNKNOWN,
+    val duplicates: List<ApartmentDuplicateEntity> = listOf(),
     val createdAt: OffsetDateTime,
     val updatedAt: OffsetDateTime,
+)
+
+public data class ApartmentDuplicateEntity(
+    val url: String,
+    val price: Double,
+    val pricePerM2: Double?,
+    val images: List<String> = emptyList<String>(),
+    val provider: ProviderTypeEntity = ProviderTypeEntity.UNKNOWN,
 )
 
 @RegisterForReflection

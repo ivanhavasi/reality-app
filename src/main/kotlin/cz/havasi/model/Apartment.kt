@@ -1,5 +1,8 @@
 package cz.havasi.model
 
+import cz.havasi.model.enum.ProviderType
+import kotlin.collections.listOf
+
 public data class Apartment(
     val id: String,
     val fingerprint: String,
@@ -15,6 +18,16 @@ public data class Apartment(
     val transactionType: TransactionType,
     val images: List<String> = emptyList<String>(),
     val description: String? = null,
+    val provider: ProviderType = ProviderType.UNKNOWN,
+    val duplicates: List<ApartmentDuplicate> = listOf(),
+)
+
+public data class ApartmentDuplicate(
+    val url: String,
+    val price: Double,
+    val pricePerM2: Double?,
+    val images: List<String> = emptyList<String>(),
+    val provider: ProviderType = ProviderType.UNKNOWN,
 )
 
 public data class Locality(
