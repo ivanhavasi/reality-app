@@ -104,7 +104,10 @@ public class RealityService(
 
     private suspend fun List<Apartment>.saveApartments(): List<Apartment> = also {
         if (isNotEmpty()) {
-            apartmentRepository.saveAll(this)
+            val (newApartments, updatedApartments) = partition { it.duplicates.isEmpty() }
+
+            apartmentRepository.saveAll(newApartments)
+            apartmentRepository.updateAll(updatedApartments)
         }
     }
 

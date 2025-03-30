@@ -2,8 +2,11 @@ package cz.havasi.repository.mongo
 
 import cz.havasi.AbstractIT
 import cz.havasi.helper.ApartmentHelper.APARTMENT
+import cz.havasi.model.ApartmentDuplicate
+import cz.havasi.model.enum.ProviderType
 import io.quarkus.test.junit.QuarkusTest
 import kotlinx.coroutines.test.runTest
+import org.bson.types.ObjectId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -46,5 +49,26 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
         assertTrue(findByFingerprint?.id == existingApartment.id) { "Apartment not found by fingerprint" }
         assertTrue(findById?.id == existingApartment.id) { "Apartment not found by id" }
         assertTrue(findByBoth?.id == existingApartment.id) { "Apartment not found by fingerprint or id" }
+    }
+
+    @Test
+    fun `updateAll correctly updates existing apartment`() = runTest {
+        val existingApartment = APARTMENT
+        val duplicate = ApartmentDuplicate(
+            url = "test",
+            price = 10.0,
+            pricePerM2 = 1.0,
+            images = emptyList(),
+            provider = ProviderType.SREALITY,
+        )
+        val newApartment = existingApartment.copy(duplicates = listOf(duplicate))
+
+        repository.save(existingApartment)
+        repository.updateAll(listOf(newApartment))
+
+        val found = repository.findByIdOrFingerprint(existingApartment.id, existingApartment.fingerprint)
+
+        assertEquals(1, found?.duplicates?.size)
+        assertEquals(duplicate, found?.duplicates?.get(0))
     }
 }

@@ -7,8 +7,8 @@ import java.time.OffsetDateTime
 
 @RegisterForReflection
 public data class ApartmentEntity(
-    val _id: ObjectId,
-    val externalId: String,
+    val _id: ObjectId, // custom id for MongoDB
+    val externalId: String, // is the same as Apartment.id
     val fingerprint: String,
     val name: String,
     val url: String,

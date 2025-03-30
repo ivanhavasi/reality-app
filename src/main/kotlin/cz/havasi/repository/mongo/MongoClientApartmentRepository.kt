@@ -1,6 +1,9 @@
 package cz.havasi.repository.mongo
 
+import com.mongodb.client.model.BulkWriteOptions
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.UpdateOneModel
+import com.mongodb.client.model.Updates
 import cz.havasi.model.*
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.repository.ApartmentRepository
@@ -10,6 +13,7 @@ import cz.havasi.repository.entity.ApartmentDuplicateEntity
 import cz.havasi.repository.entity.ApartmentEntity
 import cz.havasi.repository.entity.LocalityEntity
 import cz.havasi.repository.entity.enum.ProviderTypeEntity
+import io.quarkus.logging.Log
 import io.quarkus.mongodb.reactive.ReactiveMongoClient
 import io.smallrye.mutiny.coroutines.asFlow
 import io.smallrye.mutiny.coroutines.awaitSuspending
@@ -48,6 +52,27 @@ internal class MongoClientApartmentRepository(
             ?.insertedIds
             ?.map { it.value.asObjectId().value }
             ?: throw error("No apartments were saved among the ids: ${apartments.map { a -> a.id }}")
+
+    override suspend fun updateAll(apartments: List<Apartment>) {
+        val bulkUpdates = apartments.map { apartment ->
+            UpdateOneModel<ApartmentEntity>(
+                Filters.eq("externalId", apartment.id),
+                Updates.set("duplicates", apartment.duplicates.map { it.toEntity() }),
+            )
+        }
+
+        val result = mongoCollection
+            .bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false))
+            .awaitSuspending()
+
+        Log.debug("Bulk write update count: ${result.modifiedCount} out of ${apartments.size}")
+        if (result.modifiedCount != apartments.size) {
+            Log.error(
+                "Not all apartments were updated. Expected ${apartments.size} but got ${result.modifiedCount}. " +
+                    "All apartmentIds: ${apartments.map { it.id }}",
+            )
+        }
+    }
 
     override suspend fun existsByIdOrFingerprint(id: String, fingerprint: String): Boolean {
         val filters = mutableListOf<Bson>()

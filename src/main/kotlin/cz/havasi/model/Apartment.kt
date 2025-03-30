@@ -1,7 +1,6 @@
 package cz.havasi.model
 
 import cz.havasi.model.enum.ProviderType
-import kotlin.collections.listOf
 
 public data class Apartment(
     val id: String,
