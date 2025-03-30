@@ -63,18 +63,16 @@ public class RealityService(
             ),
         )
 
-        Log.info("Found ${apartments.size} apartments for provider $this (offset=$offset, limit=$limit)")
+        Log.debug("Found ${apartments.size} apartments for provider $this (offset=$offset, limit=$limit)")
 
         val filteredApartments = apartments
             .mapNotNull {
-                Log.info("Processing apartment ${it.name} (id=${it.id})")
+                Log.debug("Processing apartment ${it.name} (id=${it.id})")
                 val duplicateApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
-                Log.info("Found duplicate apartment or null ${duplicateApartment?.id} for ${it.name}")
+
                 if (duplicateApartment != null) {
-                    Log.info("Duplicate exists for ${it.name} (id=${duplicateApartment.id})")
                     it.updateWithDuplicateIfNeeded(duplicateApartment)
                 } else {
-                    Log.info("Saving new apartment ${it.name}")
                     it
                 }
             }
@@ -96,9 +94,9 @@ public class RealityService(
     }
 
     private fun Apartment.updateWithDuplicateIfNeeded(duplicateApartment: Apartment): Apartment? {
-        val foundProviders = mutableListOf(provider) + duplicates.map { it.provider }
+        val foundProviders = hashSetOf(provider) + duplicates.map { it.provider }
         if (price == duplicateApartment.price && foundProviders.contains(duplicateApartment.provider)) {
-            null // ignore, if price is the same
+            return null // ignore, if price is the same
         }
         val duplicateList = duplicates.toMutableList()
         duplicateList.add(duplicateApartment.toDuplicate())
