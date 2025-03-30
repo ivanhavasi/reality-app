@@ -2,6 +2,7 @@ package cz.havasi.service.notification
 
 import cz.havasi.model.Apartment
 import cz.havasi.model.DiscordWebhookNotification
+import cz.havasi.model.enum.ProviderType
 import cz.havasi.model.event.HandleNotificationsEvent
 import cz.havasi.rest.client.DiscordClient
 import cz.havasi.rest.client.model.DiscordEmbed
@@ -53,12 +54,20 @@ internal class DiscordWebhookNotificationEventHandler(
                     title = name,
                     description = description,
                     url = url,
-                    color = 65280,
+                    color = resolveColor(),
                     thumbnail = images.getThumbnailData(),
                     fields = getFieldsData(),
                 ),
             ),
         )
+
+    private fun Apartment.resolveColor(): Int =
+        when (provider) {
+            ProviderType.SREALITY -> 13705505
+            ProviderType.IDNES -> 2455546
+            ProviderType.BEZREALITKY -> 3773963
+            ProviderType.UNKNOWN -> 14593814
+        }
 
     private fun List<String>.getThumbnailData() = DiscordUrl(
         url = getOrNull(0) ?: "https://picsum.photos/500/400",
@@ -95,5 +104,33 @@ internal class DiscordWebhookNotificationEventHandler(
             value = transactionType.name.firstCapitalOthersLowerCase(),
             inline = true,
         ),
-    )
+    ).applyDiscountFieldIfNeeded(this)
+
+    private fun List<DiscordField>.applyDiscountFieldIfNeeded(apartment: Apartment): List<DiscordField> {
+        val discountPrice = apartment.calculateDiscountPrice()
+
+        return if (discountPrice < apartment.price) {
+            val list = toMutableList()
+            list.add(
+                1,
+                DiscordField(
+                    name = "Discount Price",
+                    value = discountPrice.formatToNumberWithSpaces(),
+                    inline = true,
+                ),
+            )
+            list
+        } else {
+            this
+        }
+    }
+
+    private fun Apartment.calculateDiscountPrice(): Double {
+        val minPrice = duplicates.minByOrNull { it.price }
+        return if (minPrice != null && minPrice.price < price) {
+            minPrice.price
+        } else {
+            price
+        }
+    }
 }
