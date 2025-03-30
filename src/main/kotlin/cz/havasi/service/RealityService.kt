@@ -87,7 +87,18 @@ public class RealityService(
 
     private suspend fun List<Apartment>.sendNotifications() = also {
         if (isNotEmpty()) {
-            notificationService.sendNotificationsForApartments(this)
+            val filteredList = filter {
+                val minPrice = it.duplicates.minByOrNull { it.price }
+                if (minPrice != null && minPrice.price >= it.price) {
+                    Log.debug("Price is lower than minimum price, ignoring notification")
+                    true
+                } else {
+                    Log.debug("Price is higher than minimum price or doesn't have duplicates, sending notification")
+                    false
+                }
+            }
+
+            notificationService.sendNotificationsForApartments(filteredList)
         }
     }
 
