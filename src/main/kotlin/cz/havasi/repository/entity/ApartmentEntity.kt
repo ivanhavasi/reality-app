@@ -1,6 +1,5 @@
 package cz.havasi.repository.entity
 
-import cz.havasi.model.CurrencyType
 import cz.havasi.repository.entity.enum.ProviderTypeEntity
 import io.quarkus.runtime.annotations.RegisterForReflection
 import org.bson.types.ObjectId
@@ -29,6 +28,7 @@ public data class ApartmentEntity(
     val updatedAt: OffsetDateTime,
 )
 
+@RegisterForReflection
 public data class ApartmentDuplicateEntity(
     val url: String,
     val price: Double,

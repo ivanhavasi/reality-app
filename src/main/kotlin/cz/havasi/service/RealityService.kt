@@ -25,9 +25,13 @@ public class RealityService(
         Log.debug("Estate providers: $estateProviders")
     }
 
-    public suspend fun fetchAndSaveApartmentsForSale(): Unit = coroutineScope {
+    public suspend fun fetchAndSaveApartmentsForSale(): Unit {
         Log.info("Fetching and saving apartments for sale")
-        estateProviders.forEach { launch { fetchAndSaveApartmentsForProvider(it) } }
+        estateProviders.forEach {
+            launchAndHandleException {
+                fetchAndSaveApartmentsForProvider(it)
+            }
+        }
     }
 
     private suspend fun fetchAndSaveApartmentsForProvider(provider: EstatesProvider) {
@@ -99,6 +103,17 @@ public class RealityService(
         val duplicateList = duplicates.toMutableList()
         duplicateList.add(duplicateApartment.toDuplicate())
         return this.copy(duplicates = duplicateList)
+    }
+
+    private suspend fun launchAndHandleException(f: suspend () -> Unit) = coroutineScope {
+        launch {
+            try {
+                f()
+            } catch (e: Exception) {
+                Log.error("Error while fetching and saving apartments", e)
+                throw e
+            }
+        }
     }
 
     private fun Apartment.toDuplicate() =
