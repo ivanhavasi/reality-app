@@ -13,6 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.random.Random
 
 @ApplicationScoped
@@ -70,7 +71,10 @@ public class RealityService(
                 Log.debug("Processing apartment ${it.name} (id=${it.id})")
                 val duplicateApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
 
-                if (duplicateApartment != null) {
+                // size of the apartment is the same
+                if (duplicateApartment != null
+                    && areDoublesEqualWithTolerance(duplicateApartment.sizeInM2, it.sizeInM2)
+                ) {
                     it.updateWithDuplicateIfNeeded(duplicateApartment)
                 } else {
                     it
@@ -122,4 +126,10 @@ public class RealityService(
             images = images,
             provider = provider,
         )
+
+    private fun areDoublesEqualWithTolerance(a: Double, b: Double, tolerance: Double = 0.05): Boolean {
+        val difference = abs(a - b)
+
+        return difference <= abs(a).coerceAtLeast(abs(b)) * tolerance
+    }
 }

@@ -10,6 +10,7 @@ import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jsoup.Jsoup
+import kotlin.math.roundToInt
 
 @ApplicationScoped
 internal class IdnesProvider(
@@ -78,7 +79,7 @@ internal class IdnesProvider(
                 url = url,
                 price = price,
                 pricePerM2 = pricePerM2,
-                sizeInM2 = size,
+                sizeInM2 = size.roundToInt().toDouble(), // rounding
                 currency = CurrencyType.CZK,
                 locality = locality,
                 mainCategory = getEstatesCommand.type,

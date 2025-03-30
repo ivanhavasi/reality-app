@@ -12,6 +12,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jsoup.Jsoup
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import kotlin.math.roundToInt
 
 @ApplicationScoped
 internal class BezrealitkyProvider(
@@ -89,7 +90,7 @@ internal class BezrealitkyProvider(
                 ),
                 name = name,
                 pricePerM2 = price / size,
-                sizeInM2 = size,
+                sizeInM2 = size.roundToInt().toDouble(), // rounding
                 currency = CurrencyType.CZK,
                 mainCategory = getEstatesCommand.type,
                 subCategory = subCategory,

@@ -12,6 +12,7 @@ import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
+import kotlin.math.roundToInt
 
 @ApplicationScoped
 public class SrealityProvider internal constructor(
@@ -54,7 +55,7 @@ public class SrealityProvider internal constructor(
             url = prepareUrl(),
             price = price,
             pricePerM2 = pricePerM2 ?: error("Sreality apartment $hashId has no price per m2"),
-            sizeInM2 = price / pricePerM2,
+            sizeInM2 = (price / pricePerM2).roundToInt().toDouble(), // rounding
             currency = currency.name.toCurrencyType(),
             locality = locality.toLocality(),
             mainCategory = mainCategory?.name?.toMainCategory()
