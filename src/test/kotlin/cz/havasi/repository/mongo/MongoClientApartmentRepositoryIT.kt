@@ -3,10 +3,10 @@ package cz.havasi.repository.mongo
 import cz.havasi.AbstractIT
 import cz.havasi.helper.ApartmentHelper.APARTMENT
 import cz.havasi.model.ApartmentDuplicate
+import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.model.enum.ProviderType
 import io.quarkus.test.junit.QuarkusTest
 import kotlinx.coroutines.test.runTest
-import org.bson.types.ObjectId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -61,10 +61,9 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
             images = emptyList(),
             provider = ProviderType.SREALITY,
         )
-        val newApartment = existingApartment.copy(duplicates = listOf(duplicate))
 
         repository.save(existingApartment)
-        repository.updateAll(listOf(newApartment))
+        repository.bulkUpdateApartmentWithDuplicate(listOf(UpdateApartmentWithDuplicateCommand(existingApartment, duplicate)))
 
         val found = repository.findByIdOrFingerprint(existingApartment.id, existingApartment.fingerprint)
 

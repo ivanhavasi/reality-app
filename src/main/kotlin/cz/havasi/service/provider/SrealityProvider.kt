@@ -55,7 +55,7 @@ public class SrealityProvider internal constructor(
             url = prepareUrl(),
             price = price,
             pricePerM2 = pricePerM2 ?: error("Sreality apartment $hashId has no price per m2"),
-            sizeInM2 = (price / pricePerM2).roundToInt().toDouble(), // rounding
+            sizeInM2 = calculateSizeInM2(), // rounding
             currency = currency.name.toCurrencyType(),
             locality = locality.toLocality(),
             mainCategory = mainCategory?.name?.toMainCategory()
@@ -66,6 +66,15 @@ public class SrealityProvider internal constructor(
             images = images.map { "https:$it?fl=res,800,600,3|shr,,20|webp,60" },
             provider = ProviderType.SREALITY,
         )
+
+    private fun SrealityApartment.calculateSizeInM2() =
+        try {
+            val pricePerM2Updated = pricePerM2 ?: 1.0
+            (price / pricePerM2Updated).roundToInt().toDouble()
+        } catch (e: Exception) {
+            Log.error("Error while calculating size in m2 for apartment $hashId", e)
+            0.0
+        }
 
     private fun SrealityApartment.prepareUrl() =
         "$baseUrl/detail/prodej/byt/${subCategory?.name}/${locality.citySeoName ?: ""}-${locality.citypartSeoName ?: ""}-${locality.streetSeoName ?: ""}/$hashId"

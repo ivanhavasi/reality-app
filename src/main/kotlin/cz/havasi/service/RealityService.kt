@@ -4,7 +4,9 @@ import cz.havasi.model.Apartment
 import cz.havasi.model.ApartmentDuplicate
 import cz.havasi.model.BuildingType
 import cz.havasi.model.TransactionType
+import cz.havasi.model.command.ApartmentsAndDuplicates
 import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.service.provider.EstatesProvider
 import io.quarkus.arc.All
@@ -54,7 +56,7 @@ public class RealityService(
         }
     }
 
-    private suspend fun EstatesProvider.getApartments(offset: Int, limit: Int): List<Apartment> {
+    private suspend fun EstatesProvider.getApartments(offset: Int, limit: Int): ApartmentsAndDuplicates {
         val apartments = getEstates(
             GetEstatesCommand(
                 type = BuildingType.APARTMENT,
@@ -63,11 +65,12 @@ public class RealityService(
                 limit = limit,
             ),
         )
-
         Log.debug("Found ${apartments.size} apartments for provider $this (offset=$offset, limit=$limit)")
 
-        val filteredApartments = apartments
-            .mapNotNull {
+        val apartmentDuplicates = mutableListOf<UpdateApartmentWithDuplicateCommand>()
+        val filteredApartments = mutableListOf<Apartment>()
+        apartments
+            .forEach {
                 Log.debug("Processing apartment ${it.name} (id=${it.id})")
                 val duplicateApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
 
@@ -75,50 +78,46 @@ public class RealityService(
                 if (duplicateApartment != null
                     && areDoublesEqualWithTolerance(duplicateApartment.sizeInM2, it.sizeInM2)
                 ) {
-                    it.updateWithDuplicateIfNeeded(duplicateApartment)
+                    val duplicate = it.updateWithDuplicateIfNeeded(duplicateApartment)
+                    if (duplicate != null) { // save duplicate if not null
+                        apartmentDuplicates.add(UpdateApartmentWithDuplicateCommand(it, duplicate))
+                    }
                 } else {
-                    it
+                    filteredApartments.add(it)
                 }
             }
 
-        Log.info("Saving ${filteredApartments.size} apartments (vs ${apartments.size} fetched)")
-        return filteredApartments
+        Log.info("Saving ${filteredApartments.size} apartments and ${apartmentDuplicates.size} duplicates (vs ${apartments.size} fetched)")
+        return ApartmentsAndDuplicates(filteredApartments, apartmentDuplicates)
     }
 
     private suspend fun List<Apartment>.sendNotifications() = also {
-        if (isNotEmpty()) {
-            val filteredList = filter {
-                val minPrice = it.duplicates.minByOrNull { it.price }
-                if (minPrice != null && minPrice.price >= it.price) {
-                    Log.debug("Price is lower than minimum price, ignoring notification")
-                    true
-                } else {
-                    Log.debug("Price is higher than minimum price or doesn't have duplicates, sending notification")
-                    false
-                }
-            }
-
-            notificationService.sendNotificationsForApartments(filteredList)
-        }
+        notificationService.sendNotificationsForApartments(this)
     }
 
-    private suspend fun List<Apartment>.saveApartments(): List<Apartment> = also {
-        if (isNotEmpty()) {
-            val (newApartments, updatedApartments) = partition { it.duplicates.isEmpty() }
-
-            apartmentRepository.saveAll(newApartments)
-            apartmentRepository.updateAll(updatedApartments)
+    private suspend fun ApartmentsAndDuplicates.saveApartments(): List<Apartment> = let {
+        if (apartments.isNotEmpty()) {
+            apartmentRepository.saveAll(apartments)
         }
+        if (duplicates.isNotEmpty()) {
+            apartmentRepository.bulkUpdateApartmentWithDuplicate(duplicates)
+        }
+
+        apartments + duplicates.map { it.apartment.addDuplicate(it.duplicate) }
     }
 
-    private fun Apartment.updateWithDuplicateIfNeeded(duplicateApartment: Apartment): Apartment? {
+    private fun Apartment.addDuplicate(duplicate: ApartmentDuplicate) =
+        copy(duplicates = (duplicates + duplicate))
+
+    private fun Apartment.updateWithDuplicateIfNeeded(duplicateApartment: Apartment): ApartmentDuplicate? {
         val foundProviders = hashSetOf(provider) + duplicates.map { it.provider }
-        if (price == duplicateApartment.price && foundProviders.contains(duplicateApartment.provider)) {
+        Log.info("Duplicate resolution for apartmentId $id, found providers: $foundProviders, its provider ${duplicateApartment.provider}, price $price, duplicate price ${duplicateApartment.price}")
+        if (price <= duplicateApartment.price && foundProviders.contains(duplicateApartment.provider)) {
+            Log.info("Ignoring duplicate apartment $id, because its price is the same or higher than the original apartment")
             return null // ignore, if price is the same
         }
-        val duplicateList = duplicates.toMutableList()
-        duplicateList.add(duplicateApartment.toDuplicate())
-        return this.copy(duplicates = duplicateList)
+        Log.info("Continueing with duplicate apartment $id, because its price is lower than the original apartment")
+        return duplicateApartment.toDuplicate()
     }
 
     private suspend fun launchAndHandleException(f: suspend () -> Unit) = coroutineScope {

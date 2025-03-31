@@ -5,6 +5,7 @@ import com.mongodb.client.model.Filters
 import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.Updates
 import cz.havasi.model.*
+import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.repository.DatabaseNames.APARTMENT_COLLECTION_NAME
@@ -53,23 +54,31 @@ internal class MongoClientApartmentRepository(
             ?.map { it.value.asObjectId().value }
             ?: throw error("No apartments were saved among the ids: ${apartments.map { a -> a.id }}")
 
-    override suspend fun updateAll(apartments: List<Apartment>) {
-        val bulkUpdates = apartments.map { apartment ->
+    override suspend fun bulkUpdateApartmentWithDuplicate(apartmentsWithDuplicates: List<UpdateApartmentWithDuplicateCommand>) {
+        val bulkUpdates = apartmentsWithDuplicates.map {
             UpdateOneModel<ApartmentEntity>(
-                Filters.eq("externalId", apartment.id),
-                Updates.set("duplicates", apartment.duplicates.map { it.toEntity() }),
+                Filters.or(
+                    Filters.eq("externalId", it.apartment.id),
+                    Filters.eq("fingerprint", it.apartment.fingerprint),
+                ),
+                Updates.push("duplicates", it.duplicate.toEntity()),
             )
+        }
+        if (bulkUpdates.isEmpty()) {
+            Log.warn("No updates to perform for apartments: ${apartmentsWithDuplicates.map { it.apartment.id }}")
+            return // No updates to perform
         }
 
         val result = mongoCollection
             .bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false))
             .awaitSuspending()
 
-        Log.debug("Bulk write update count: ${result.modifiedCount} out of ${apartments.size}")
-        if (result.modifiedCount != apartments.size) {
+        Log.debug("Bulk write update count: ${result.modifiedCount} out of ${apartmentsWithDuplicates.size}")
+        if (result.modifiedCount != apartmentsWithDuplicates.size) {
+            Log.error(result)
             Log.error(
-                "Not all apartments were updated. Expected ${apartments.size} but got ${result.modifiedCount}. " +
-                    "All apartmentIds: ${apartments.map { it.id }}",
+                "Not all apartments were updated. Expected ${apartmentsWithDuplicates.size} but got" +
+                    "${result.modifiedCount}. All apartmentIds: ${apartmentsWithDuplicates.map { it.apartment.id }}",
             )
         }
     }
