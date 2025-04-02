@@ -9,13 +9,12 @@ import cz.havasi.model.command.GetEstatesCommand
 import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.service.provider.EstatesProvider
+import cz.havasi.service.util.areDoublesEqualWithTolerance
+import cz.havasi.service.util.launchAndHandleException
 import io.quarkus.arc.All
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.math.abs
 import kotlin.random.Random
 
 @ApplicationScoped
@@ -31,7 +30,7 @@ public class RealityService(
     public suspend fun fetchAndSaveApartmentsForSale(): Unit {
         Log.info("Fetching and saving apartments for sale")
         estateProviders.forEach {
-            launchAndHandleException {
+            launchAndHandleException("Fetching and saving apartments for provider $it") {
                 fetchAndSaveApartmentsForProvider(it)
             }
         }
@@ -45,6 +44,7 @@ public class RealityService(
             Log.info("Fetching apartments for provider $provider, call $i")
             val apartments = provider
                 .getApartments(i * numberOfApartments, numberOfApartments)
+                .filterApartments()
                 .saveApartments()
                 .sendNotifications()
 
@@ -56,8 +56,8 @@ public class RealityService(
         }
     }
 
-    private suspend fun EstatesProvider.getApartments(offset: Int, limit: Int): ApartmentsAndDuplicates {
-        val apartments = getEstates(
+    private suspend fun EstatesProvider.getApartments(offset: Int, limit: Int): List<Apartment> =
+        getEstates(
             GetEstatesCommand(
                 type = BuildingType.APARTMENT,
                 transaction = TransactionType.SALE,
@@ -65,30 +65,40 @@ public class RealityService(
                 limit = limit,
             ),
         )
-        Log.debug("Found ${apartments.size} apartments for provider $this (offset=$offset, limit=$limit)")
+            .also { Log.debug("Found ${it.size} apartments for provider $this (offset=$offset, limit=$limit)") }
 
-        val apartmentDuplicates = mutableListOf<UpdateApartmentWithDuplicateCommand>()
-        val filteredApartments = mutableListOf<Apartment>()
-        apartments
-            .forEach {
-                Log.debug("Processing apartment ${it.name} (id=${it.id})")
-                val duplicateApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
+    private suspend fun List<Apartment>.filterApartments(): ApartmentsAndDuplicates {
+        val duplicates = mutableListOf<UpdateApartmentWithDuplicateCommand>()
+        val newApartments = mutableListOf<Apartment>()
 
-                // size of the apartment is the same
-                if (duplicateApartment != null
-                    && areDoublesEqualWithTolerance(duplicateApartment.sizeInM2, it.sizeInM2)
-                ) {
-                    val duplicate = it.updateWithDuplicateIfNeeded(duplicateApartment)
-                    if (duplicate != null) { // save duplicate if not null
-                        apartmentDuplicates.add(UpdateApartmentWithDuplicateCommand(it, duplicate))
-                    }
-                } else {
-                    filteredApartments.add(it)
+        forEach {
+            val originalApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
+
+            if (areApartmentsDuplicates(it, originalApartment)) {
+                if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check in areApartmentsDuplicates
+                    duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartment, it.toDuplicate()))
                 }
+            } else {
+                newApartments.add(it)
             }
+        }
 
-        Log.info("Saving ${filteredApartments.size} apartments and ${apartmentDuplicates.size} duplicates (vs ${apartments.size} fetched)")
-        return ApartmentsAndDuplicates(filteredApartments, apartmentDuplicates)
+        Log.info("Saving ${newApartments.size} apartments and ${duplicates.size} duplicates (vs $size fetched)")
+        return ApartmentsAndDuplicates(newApartments, duplicates)
+    }
+
+    private fun areApartmentsDuplicates(apartment: Apartment, originalApartment: Apartment?): Boolean =
+        originalApartment != null && areDoublesEqualWithTolerance(originalApartment.sizeInM2, apartment.sizeInM2)
+
+    private fun shouldApartmentBeSavedAsDuplicate(apartment: Apartment, originalApartment: Apartment): Boolean {
+        val foundProviders = hashSetOf(apartment.provider) + apartment.duplicates.map { it.provider }
+        Log.info("Duplicate resolution for apartmentId ${apartment.id}, found providers: $foundProviders, its provider ${originalApartment.provider}, price ${apartment.price}, duplicate price ${originalApartment.price}")
+        if (apartment.price <= originalApartment.price && foundProviders.contains(originalApartment.provider)) {
+            Log.info("Ignoring duplicate apartment ${apartment.id}, because its price is the same or higher than the original apartment")
+            return false
+        }
+        Log.info("Continueing with duplicate apartment ${apartment.id}, because its price is lower than the original apartment")
+        return true
     }
 
     private suspend fun List<Apartment>.sendNotifications() = also {
@@ -109,28 +119,6 @@ public class RealityService(
     private fun Apartment.addDuplicate(duplicate: ApartmentDuplicate) =
         copy(duplicates = (duplicates + duplicate))
 
-    private fun Apartment.updateWithDuplicateIfNeeded(duplicateApartment: Apartment): ApartmentDuplicate? {
-        val foundProviders = hashSetOf(provider) + duplicates.map { it.provider }
-        Log.info("Duplicate resolution for apartmentId $id, found providers: $foundProviders, its provider ${duplicateApartment.provider}, price $price, duplicate price ${duplicateApartment.price}")
-        if (price <= duplicateApartment.price && foundProviders.contains(duplicateApartment.provider)) {
-            Log.info("Ignoring duplicate apartment $id, because its price is the same or higher than the original apartment")
-            return null // ignore, if price is the same
-        }
-        Log.info("Continueing with duplicate apartment $id, because its price is lower than the original apartment")
-        return duplicateApartment.toDuplicate()
-    }
-
-    private suspend fun launchAndHandleException(f: suspend () -> Unit) = coroutineScope {
-        launch {
-            try {
-                f()
-            } catch (e: Exception) {
-                Log.error("Error while fetching and saving apartments", e)
-                throw e
-            }
-        }
-    }
-
     private fun Apartment.toDuplicate() =
         ApartmentDuplicate(
             url = url,
@@ -139,10 +127,4 @@ public class RealityService(
             images = images,
             provider = provider,
         )
-
-    private fun areDoublesEqualWithTolerance(a: Double, b: Double, tolerance: Double = 0.05): Boolean {
-        val difference = abs(a - b)
-
-        return difference <= abs(a).coerceAtLeast(abs(b)) * tolerance
-    }
 }

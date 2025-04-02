@@ -4,7 +4,12 @@ import com.mongodb.client.model.BulkWriteOptions
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.Updates
-import cz.havasi.model.*
+import cz.havasi.model.Apartment
+import cz.havasi.model.ApartmentDuplicate
+import cz.havasi.model.BuildingType
+import cz.havasi.model.CurrencyType
+import cz.havasi.model.Locality
+import cz.havasi.model.TransactionType
 import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.repository.ApartmentRepository
@@ -23,6 +28,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import java.time.OffsetDateTime
+import java.time.ZoneOffset.UTC
 
 @ApplicationScoped
 internal class MongoClientApartmentRepository(
@@ -61,7 +67,10 @@ internal class MongoClientApartmentRepository(
                     Filters.eq("externalId", it.apartment.id),
                     Filters.eq("fingerprint", it.apartment.fingerprint),
                 ),
-                Updates.push("duplicates", it.duplicate.toEntity()),
+                Updates.combine(
+                    Updates.push("duplicates", it.duplicate.toEntity()),
+                    Updates.set("updatedAt", OffsetDateTime.now(UTC).toString()),
+                ),
             )
         }
         if (bulkUpdates.isEmpty()) {
