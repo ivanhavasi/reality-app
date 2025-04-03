@@ -42,6 +42,7 @@ internal class MongoClientApartmentRepository(
 
     override suspend fun saveAll(apartments: List<Apartment>): List<ObjectId> =
         try {
+            Log.info("Saving apartments: ${apartments.map { it.id }}")
             mongoCollection
                 .insertMany(
                     apartments.map {
@@ -61,10 +62,7 @@ internal class MongoClientApartmentRepository(
     override suspend fun bulkUpdateApartmentWithDuplicate(apartmentsWithDuplicates: List<UpdateApartmentWithDuplicateCommand>) {
         val bulkUpdates = apartmentsWithDuplicates.map {
             UpdateOneModel<ApartmentEntity>(
-                Filters.or(
-                    Filters.eq("externalId", it.apartment.id),
-                    Filters.eq("fingerprint", it.apartment.fingerprint),
-                ),
+                Filters.eq("externalId", it.apartment.id),
                 Updates.combine(
                     Updates.push("duplicates", it.duplicate.toEntity()),
                     Updates.set("updatedAt", OffsetDateTime.now(UTC).toString()),
@@ -77,6 +75,7 @@ internal class MongoClientApartmentRepository(
         }
 
         val result = try {
+            Log.info("BulkWriting apartments: ${apartmentsWithDuplicates.map { it.apartment.id }}")
             mongoCollection.bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false))
                 .awaitSuspending()
         } catch (e: Throwable) {

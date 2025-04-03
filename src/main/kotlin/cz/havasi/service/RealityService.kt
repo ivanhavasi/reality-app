@@ -92,14 +92,17 @@ public class RealityService(
     private fun areApartmentsDuplicates(apartment: Apartment, originalApartment: Apartment?): Boolean =
         originalApartment != null && areDoublesEqualWithTolerance(originalApartment.sizeInM2, apartment.sizeInM2)
 
-    private fun shouldApartmentBeSavedAsDuplicate(apartment: Apartment, originalApartment: Apartment): Boolean {
-        val foundProviders = hashSetOf(apartment.provider) + apartment.duplicates.map { it.provider }
-        Log.info("Duplicate resolution for apartmentId ${apartment.id}, found providers: $foundProviders, its provider ${originalApartment.provider}, price ${apartment.price}, duplicate price ${originalApartment.price}")
-        if (apartment.price <= originalApartment.price && foundProviders.contains(originalApartment.provider)) {
-            Log.info("Ignoring duplicate apartment ${apartment.id}, because its price is the same or higher than the original apartment")
+    private fun shouldApartmentBeSavedAsDuplicate(duplicate: Apartment, originalApartment: Apartment): Boolean {
+        val foundProviders = hashSetOf(originalApartment.provider) + originalApartment.duplicates.map { it.provider }
+        var minPrice = originalApartment.duplicates.minOfOrNull { it.price } ?: originalApartment.price
+        minPrice = minOf(minPrice, originalApartment.price)
+
+        Log.info("Duplicate resolution for apartmentId ${originalApartment.id} (duplicateId ${duplicate.id}), found providers: $foundProviders, its provider ${originalApartment.provider}, price ${originalApartment.price} (min price $minPrice), duplicate price ${duplicate.price}")
+        if (duplicate.price >= minPrice && foundProviders.contains(duplicate.provider)) {
+            Log.info("Ignoring duplicate apartment ${duplicate.id}, because its price is the same or higher than the original apartment")
             return false
         }
-        Log.info("Continueing with duplicate apartment ${apartment.id}, because its price is lower than the original apartment")
+        Log.info("Continueing with duplicate apartment ${duplicate.id}, because its price is lower than the original apartment")
         return true
     }
 
