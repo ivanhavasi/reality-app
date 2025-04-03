@@ -1,17 +1,7 @@
 package cz.havasi.repository.mongo
 
-import com.mongodb.client.MongoClient
-import com.mongodb.client.model.BulkWriteOptions
-import com.mongodb.client.model.Filters
-import com.mongodb.client.model.InsertManyOptions
-import com.mongodb.client.model.UpdateOneModel
-import com.mongodb.client.model.Updates
-import cz.havasi.model.Apartment
-import cz.havasi.model.ApartmentDuplicate
-import cz.havasi.model.BuildingType
-import cz.havasi.model.CurrencyType
-import cz.havasi.model.Locality
-import cz.havasi.model.TransactionType
+import com.mongodb.client.model.*
+import cz.havasi.model.*
 import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.repository.ApartmentRepository
@@ -35,7 +25,6 @@ import java.time.ZoneOffset.UTC
 @ApplicationScoped
 internal class MongoClientApartmentRepository(
     private val reactiveMongoClient: ReactiveMongoClient,
-    private val mongoClient: MongoClient,
 ) : ApartmentRepository {
 
     private val mongoCollection =
@@ -186,8 +175,8 @@ internal class MongoClientApartmentRepository(
             description = description,
             provider = ProviderTypeEntity.valueOf(provider.name),
             duplicates = duplicates.map { it.toEntity() },
-            createdAt = OffsetDateTime.now(),
-            updatedAt = OffsetDateTime.now(),
+            createdAt = OffsetDateTime.now(UTC),
+            updatedAt = OffsetDateTime.now(UTC),
         )
 
     private fun ApartmentDuplicate.toEntity() =
