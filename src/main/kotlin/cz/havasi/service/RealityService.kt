@@ -10,7 +10,8 @@ import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.service.provider.EstatesProvider
 import cz.havasi.service.util.areDoublesEqualWithTolerance
-import cz.havasi.service.util.launchAndHandleException
+import cz.havasi.service.util.forEachAsync
+//import cz.havasi.service.util.launchAndHandleException
 import io.quarkus.arc.All
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
@@ -28,11 +29,8 @@ public class RealityService(
     }
 
     public suspend fun fetchAndSaveApartmentsForSale(): Unit {
-        Log.info("Fetching and saving apartments for sale")
-        estateProviders.forEach {
-            launchAndHandleException("Fetching and saving apartments for provider $it") {
-                fetchAndSaveApartmentsForProvider(it)
-            }
+        estateProviders.forEachAsync(message = "Fetching and saving apartments") {
+            fetchAndSaveApartmentsForProvider(it)
         }
     }
 
@@ -75,7 +73,11 @@ public class RealityService(
             val originalApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
 
             if (areApartmentsDuplicates(it, originalApartment)) {
-                if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check in areApartmentsDuplicates
+                if (shouldApartmentBeSavedAsDuplicate(
+                        it,
+                        originalApartment!!,
+                    )
+                ) { // null-check in areApartmentsDuplicates
                     duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartment, it.toDuplicate()))
                 }
             } else {
@@ -107,10 +109,20 @@ public class RealityService(
 
     private suspend fun ApartmentsAndDuplicates.saveApartments(): List<Apartment> = let {
         if (apartments.isNotEmpty()) {
-            apartmentRepository.saveAll(apartments)
+            try {
+                apartmentRepository.saveAll(apartments)
+            } catch (e: Exception) {
+                Log.error("2 chybaaaa")
+                Log.error(e.message)
+            }
         }
         if (duplicates.isNotEmpty()) {
-            apartmentRepository.bulkUpdateApartmentWithDuplicate(duplicates)
+            try {
+                apartmentRepository.bulkUpdateApartmentWithDuplicate(duplicates)
+            } catch (e: Exception) {
+                Log.error("ASDASDASD")
+                Log.error(e)
+            }
         }
 
         apartments + duplicates.map { it.apartment.addDuplicate(it.duplicate) }

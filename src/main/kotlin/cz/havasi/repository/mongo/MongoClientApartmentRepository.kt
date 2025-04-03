@@ -1,7 +1,9 @@
 package cz.havasi.repository.mongo
 
+import com.mongodb.client.MongoClient
 import com.mongodb.client.model.BulkWriteOptions
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.InsertManyOptions
 import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.Updates
 import cz.havasi.model.Apartment
@@ -33,6 +35,7 @@ import java.time.ZoneOffset.UTC
 @ApplicationScoped
 internal class MongoClientApartmentRepository(
     private val reactiveMongoClient: ReactiveMongoClient,
+    private val mongoClient: MongoClient,
 ) : ApartmentRepository {
 
     private val mongoCollection =
@@ -49,16 +52,22 @@ internal class MongoClientApartmentRepository(
             ?: throw error("Apartment with id ${apartment.id} was not saved into mongodb.")
 
     override suspend fun saveAll(apartments: List<Apartment>): List<ObjectId> =
-        mongoCollection
-            .insertMany(
-                apartments.map {
-                    it.toEntity()
-                },
-            )
-            ?.awaitSuspending()
-            ?.insertedIds
-            ?.map { it.value.asObjectId().value }
-            ?: throw error("No apartments were saved among the ids: ${apartments.map { a -> a.id }}")
+        try {
+            mongoCollection
+                .insertMany(
+                    apartments.map {
+                        it.toEntity()
+                    },
+                    InsertManyOptions().ordered(false),
+                )
+                ?.awaitSuspending()
+                ?.insertedIds
+                ?.map { it.value.asObjectId().value }
+                ?: throw error("No apartments were saved among the ids: ${apartments.map { a -> a.id }}")
+        } catch (e: Exception) {
+            Log.error("Error while saving apartments", e)
+            emptyList()
+        }
 
     override suspend fun bulkUpdateApartmentWithDuplicate(apartmentsWithDuplicates: List<UpdateApartmentWithDuplicateCommand>) {
         val bulkUpdates = apartmentsWithDuplicates.map {
@@ -78,9 +87,13 @@ internal class MongoClientApartmentRepository(
             return // No updates to perform
         }
 
-        val result = mongoCollection
-            .bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false))
-            .awaitSuspending()
+        val result = try {
+            mongoCollection.bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false))
+                .awaitSuspending()
+        } catch (e: Throwable) {
+            Log.error("Error whilebulkWrite apartments: ${apartmentsWithDuplicates.map { it.apartment.id }}", e)
+            return
+        }
 
         Log.debug("Bulk write update count: ${result.modifiedCount} out of ${apartmentsWithDuplicates.size}")
         if (result.modifiedCount != apartmentsWithDuplicates.size) {
