@@ -12,11 +12,15 @@ import cz.havasi.repository.entity.ApartmentEntity
 import cz.havasi.repository.entity.LocalityEntity
 import cz.havasi.repository.entity.enum.ProviderTypeEntity
 import io.quarkus.logging.Log
+import io.quarkus.mongodb.FindOptions
 import io.quarkus.mongodb.reactive.ReactiveMongoClient
 import io.smallrye.mutiny.coroutines.asFlow
 import io.smallrye.mutiny.coroutines.awaitSuspending
 import jakarta.enterprise.context.ApplicationScoped
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toCollection
+import org.bson.Document
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import java.time.OffsetDateTime
@@ -105,15 +109,16 @@ internal class MongoClientApartmentRepository(
             .let { it != null }
     }
 
-    override suspend fun findByIdOrFingerprint(id: String, fingerprint: String): Apartment? {
+    override suspend fun findByIdOrFingerprint(id: String, fingerprint: String): List<Apartment> {
+        val options = FindOptions().sort(Document("createdAt", -1))
         val filters = mutableListOf<Bson>()
         filters.add(Filters.eq("externalId", id))
         filters.add(Filters.eq("fingerprint", fingerprint))
 
-        return mongoCollection.find(Filters.or(filters), ApartmentEntity::class.java)
+        return mongoCollection.find(Filters.or(filters), ApartmentEntity::class.java, options)
             .asFlow()
-            .firstOrNull()
-            ?.toModel()
+            .map { it.toModel() }
+            .toCollection(mutableListOf())
     }
 
     private fun ApartmentEntity.toModel() =

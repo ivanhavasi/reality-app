@@ -10,6 +10,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.OffsetDateTime
+import java.time.ZoneOffset.UTC
 
 @QuarkusTest
 internal class MongoClientApartmentRepositoryIT : AbstractIT() {
@@ -19,7 +21,7 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
         val apartment = APARTMENT
         val id = repository.save(apartment)
 
-        val findByBoth = repository.findByIdOrFingerprint(apartment.id, apartment.fingerprint)
+        val findByBoth = repository.findByIdOrFingerprint(apartment.id, apartment.fingerprint).firstOrNull()
 
         assertEquals(apartment, findByBoth) { "Apartment with id $id was not saved into mongodb." }
     }
@@ -42,9 +44,9 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
         val existingApartment = APARTMENT
         repository.save(existingApartment)
 
-        val findByFingerprint = repository.findByIdOrFingerprint("wrongId", existingApartment.fingerprint)
-        val findById = repository.findByIdOrFingerprint(existingApartment.id, "wrongFingerprint")
-        val findByBoth = repository.findByIdOrFingerprint(existingApartment.id, existingApartment.fingerprint)
+        val findByFingerprint = repository.findByIdOrFingerprint("wrongId", existingApartment.fingerprint).firstOrNull()
+        val findById = repository.findByIdOrFingerprint(existingApartment.id, "wrongFingerprint").firstOrNull()
+        val findByBoth = repository.findByIdOrFingerprint(existingApartment.id, existingApartment.fingerprint).firstOrNull()
 
         assertTrue(findByFingerprint?.id == existingApartment.id) { "Apartment not found by fingerprint" }
         assertTrue(findById?.id == existingApartment.id) { "Apartment not found by id" }
@@ -65,7 +67,7 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
         repository.save(existingApartment)
         repository.bulkUpdateApartmentWithDuplicate(listOf(UpdateApartmentWithDuplicateCommand(existingApartment, duplicate)))
 
-        val found = repository.findByIdOrFingerprint(existingApartment.id, existingApartment.fingerprint)
+        val found = repository.findByIdOrFingerprint(existingApartment.id, existingApartment.fingerprint).firstOrNull()
 
         assertEquals(1, found?.duplicates?.size)
         assertEquals(duplicate, found?.duplicates?.get(0))

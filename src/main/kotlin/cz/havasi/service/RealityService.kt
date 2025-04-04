@@ -70,14 +70,9 @@ public class RealityService(
         val newApartments = mutableListOf<Apartment>()
 
         forEach {
-            val originalApartment = apartmentRepository.findByIdOrFingerprint(it.id, it.fingerprint)
-
+            val originalApartment = findOriginalApartment(it)
             if (areApartmentsDuplicates(it, originalApartment)) {
-                if (shouldApartmentBeSavedAsDuplicate(
-                        it,
-                        originalApartment!!,
-                    )
-                ) { // null-check in areApartmentsDuplicates
+                if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check- areApartmentsDuplicates
                     duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartment, it.toDuplicate()))
                 }
             } else {
@@ -87,6 +82,14 @@ public class RealityService(
 
         Log.info("Saving ${newApartments.size} apartments and ${duplicates.size} duplicates (vs $size fetched)")
         return ApartmentsAndDuplicates(newApartments, duplicates)
+    }
+
+    private suspend fun findOriginalApartment(apartment: Apartment): Apartment? {
+        val apartments = apartmentRepository.findByIdOrFingerprint(apartment.id, apartment.fingerprint)
+        val exactApartment = apartments.firstOrNull { it.id == apartment.id }
+
+        return exactApartment
+            ?: apartments.firstOrNull { areDoublesEqualWithTolerance(apartment.sizeInM2, it.sizeInM2) }
     }
 
     private fun areApartmentsDuplicates(apartment: Apartment, originalApartment: Apartment?): Boolean =

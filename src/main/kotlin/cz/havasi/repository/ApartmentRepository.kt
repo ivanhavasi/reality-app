@@ -10,5 +10,5 @@ public interface ApartmentRepository {
     public suspend fun bulkUpdateApartmentWithDuplicate(apartments: List<UpdateApartmentWithDuplicateCommand>)
 
     public suspend fun existsByIdOrFingerprint(id: String, fingerprint: String): Boolean
-    public suspend fun findByIdOrFingerprint(id: String, fingerprint: String): Apartment?
+    public suspend fun findByIdOrFingerprint(id: String, fingerprint: String): List<Apartment>
 }
