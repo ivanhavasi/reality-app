@@ -1,6 +1,5 @@
 package cz.havasi.repository.config
 
-import OffsetDateTimeCodec
 import jakarta.enterprise.context.ApplicationScoped
 import org.bson.codecs.Codec
 import org.bson.codecs.configuration.CodecProvider

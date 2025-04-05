@@ -30,6 +30,7 @@ dependencies {
 
     implementation("io.quarkus:quarkus-mongodb-client")
     implementation("org.mongodb:bson-kotlin:5.2.1")
+    implementation("io.quarkiverse.mongock:quarkus-mongock:0.6.0")
 
     implementation("io.smallrye.reactive:mutiny-kotlin:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")

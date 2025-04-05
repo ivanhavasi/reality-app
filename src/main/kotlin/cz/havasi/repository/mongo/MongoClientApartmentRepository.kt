@@ -69,7 +69,7 @@ internal class MongoClientApartmentRepository(
                 Filters.eq("externalId", it.apartment.id),
                 Updates.combine(
                     Updates.push("duplicates", it.duplicate.toEntity()),
-                    Updates.set("updatedAt", OffsetDateTime.now(UTC).toString()),
+                    Updates.set("updatedAt", OffsetDateTime.now(UTC)),
                 ),
             )
         }
