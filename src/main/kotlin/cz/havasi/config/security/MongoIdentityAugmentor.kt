@@ -22,14 +22,13 @@ public class MongoIdentityAugmentor(
     override fun augment(
         p0: SecurityIdentity,
         p1: AuthenticationRequestContext,
-    ): Uni<SecurityIdentity> {
-        val userInfo = getUserInfo(p0) ?: return Uni.createFrom().item(p0)
-        val securityIdentity = updateSecurityIdentity(userInfo, p0)
+    ): Uni<SecurityIdentity> =
+        getUserInfoOrNull(p0)
+            ?.let { updateSecurityIdentity(it, p0) }
+            ?.toUni()
+            ?: createAnonymousUser(p0).toUni()
 
-        return Uni.createFrom().item(securityIdentity)
-    }
-
-    private fun getUserInfo(securityIdentity: SecurityIdentity) =
+    private fun getUserInfoOrNull(securityIdentity: SecurityIdentity) =
         try {
             securityIdentity.attributes["userinfo"] as UserInfo
         } catch (_: Exception) {
@@ -44,8 +43,16 @@ public class MongoIdentityAugmentor(
             val roles = user.roles.map(UserRole::name).toSet()
             val builder: QuarkusSecurityIdentity.Builder = QuarkusSecurityIdentity.builder(securityIdentity)
 
-            builder.addRoles(roles).build()
+            builder
+                .addRoles(roles)
+                .addAttribute("id", user.id)
+                .build()
         }
+
+    private fun createAnonymousUser(securityIdentity: SecurityIdentity): QuarkusSecurityIdentity =
+        QuarkusSecurityIdentity.builder(securityIdentity)
+            .setAnonymous(true)
+            .build()
 
     private suspend fun createUser(userInfo: UserInfo): User {
         val id = userRepository.save(
@@ -58,4 +65,7 @@ public class MongoIdentityAugmentor(
 
         return userRepository.getUserById(id)
     }
+
+    private fun <T> T.toUni(): Uni<T> =
+        Uni.createFrom().item(this)
 }
