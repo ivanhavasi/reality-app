@@ -32,6 +32,12 @@ on:
       MAILJET_PASSWORD:
         description: 'Password for Mailjet'
         required: true
+      MONGODB_DATABASE:
+        description: 'MongoDB database name'
+        required: true
+      GOOGLE_CLIENT_ID:
+        description: 'Google Client ID'
+        required: true
 
 jobs:
   deploy-to-ec2:
@@ -67,4 +73,6 @@ jobs:
               -e MONGODB_CONNECTION_STRING="${{ secrets.MONGODB_CONNECTION_STRING }}" \
               -e MAILJET_USERNAME="${{ secrets.MAILJET_USERNAME }}" \
               -e MAILJET_PASSWORD="${{ secrets.MAILJET_PASSWORD }}" \
+              -e MONGODB_DATABASE="${{ secrets.MONGODB_DATABASE }}" \
+              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
               ${{ secrets.ECR_REPOSITORY }}:${{ inputs.commit_hash }}
