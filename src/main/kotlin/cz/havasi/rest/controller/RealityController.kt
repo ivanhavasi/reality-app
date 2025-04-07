@@ -23,7 +23,8 @@ internal class RealityController(
 //                limit = 22,
 //            ),
 //        )
-        realityService.fetchAndSaveApartmentsForSale()
+        println("HEREEEEEEEEEEEEE")
+//        realityService.fetchAndSaveApartmentsForSale()
         return "Hello world"
     }
 }

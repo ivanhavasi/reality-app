@@ -93,7 +93,11 @@ public class RealityService(
     }
 
     private fun areApartmentsDuplicates(apartment: Apartment, originalApartment: Apartment?): Boolean =
-        originalApartment != null && areDoublesEqualWithTolerance(originalApartment.sizeInM2, apartment.sizeInM2)
+        originalApartment != null
+            && (
+            apartment.id == originalApartment.id
+                || areDoublesEqualWithTolerance(originalApartment.sizeInM2, apartment.sizeInM2)
+            )
 
     private fun shouldApartmentBeSavedAsDuplicate(duplicate: Apartment, originalApartment: Apartment): Boolean {
         val foundProviders = hashSetOf(originalApartment.provider) + originalApartment.duplicates.map { it.provider }
@@ -115,20 +119,10 @@ public class RealityService(
 
     private suspend fun ApartmentsAndDuplicates.saveApartments(): List<Apartment> = let {
         if (apartments.isNotEmpty()) {
-            try {
-                apartmentRepository.saveAll(apartments)
-            } catch (e: Exception) {
-                Log.error("2 chybaaaa")
-                Log.error(e.message)
-            }
+            apartmentRepository.saveAll(apartments)
         }
         if (duplicates.isNotEmpty()) {
-            try {
-                apartmentRepository.bulkUpdateApartmentWithDuplicate(duplicates)
-            } catch (e: Exception) {
-                Log.error("ASDASDASD")
-                Log.error(e)
-            }
+            apartmentRepository.bulkUpdateApartmentWithDuplicate(duplicates)
         }
 
         apartments + duplicates.map { it.apartment.addDuplicate(it.duplicate) }
