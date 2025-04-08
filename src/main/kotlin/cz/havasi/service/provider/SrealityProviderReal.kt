@@ -4,7 +4,7 @@ import SrealityApartment
 import SrealityLocality
 import SrealityProperty
 import cz.havasi.model.*
-import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.command.GetRealEstatesCommand
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.rest.client.SrealityClient
 import cz.havasi.service.util.constructFingerprint
@@ -15,13 +15,13 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 import kotlin.math.roundToInt
 
 @ApplicationScoped
-public class SrealityProvider internal constructor(
+public class SrealityProviderReal internal constructor(
     @RestClient private val srealityClient: SrealityClient,
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
-) : EstatesProvider {
-    override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
+) : RealEstatesProvider {
+    override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> = with(getRealEstatesCommand) {
         try {
-            Log.debug("Searching sreality estates. limit ${getEstatesCommand.limit}, offset ${getEstatesCommand.offset}")
+            Log.debug("Searching sreality estates. limit ${getRealEstatesCommand.limit}, offset ${getRealEstatesCommand.offset}")
             callClient()
         } catch (e: Exception) {
             Log.error("Error while fetching sreality data, limit $limit, offset $offset")
@@ -31,7 +31,7 @@ public class SrealityProvider internal constructor(
         }
     }
 
-    private suspend fun GetEstatesCommand.callClient(): List<Apartment> =
+    private suspend fun GetRealEstatesCommand.callClient(): List<Apartment> =
         srealityClient.searchEstates(
             categoryType = 1,
             categoryMain = 1,

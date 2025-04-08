@@ -1,7 +1,7 @@
 package cz.havasi.service.provider
 
 import cz.havasi.model.*
-import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.command.GetRealEstatesCommand
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.rest.client.BezrealitkyClient
 import cz.havasi.service.util.constructFingerprint
@@ -15,11 +15,11 @@ import java.nio.charset.StandardCharsets
 import kotlin.math.roundToInt
 
 @ApplicationScoped
-internal class BezrealitkyProvider(
+internal class BezrealitkyProviderReal(
     @RestClient private val bezrealitkyClient: BezrealitkyClient,
     @ConfigProperty(name = "quarkus.rest-client.bezrealitky-api.url") private val baseUrl: String,
-) : EstatesProvider {
-    override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
+) : RealEstatesProvider {
+    override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> = with(getRealEstatesCommand) {
         try {
             callClient()
         } catch (e: Exception) {
@@ -30,7 +30,7 @@ internal class BezrealitkyProvider(
         }
     }
 
-    private suspend fun GetEstatesCommand.callClient(): List<Apartment> =
+    private suspend fun GetRealEstatesCommand.callClient(): List<Apartment> =
         // bezrealitky doesn't support pagination, same as iDnes
         bezrealitkyClient.searchEstates(
             offerType = prepareOfferType(),
@@ -44,7 +44,7 @@ internal class BezrealitkyProvider(
             .parseDataFromResponse(this)
 
     // ugly html parsing
-    private fun String.parseDataFromResponse(getEstatesCommand: GetEstatesCommand): List<Apartment> =
+    private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         Jsoup.parse(this).select("article.PropertyCard_propertyCard__moO_5").map {
             val url = it.selectFirst(".PropertyCard_propertyCardHeadline___diKI")?.selectFirst("a")?.attr("href")
             val id = url?.substringAfter("/nemovitosti-byty-domy/") ?: logMissingData("id")
@@ -84,7 +84,7 @@ internal class BezrealitkyProvider(
                 locality = locality,
                 description = description,
                 fingerprint = constructFingerprint(
-                    buildingType = getEstatesCommand.type,
+                    buildingType = getRealEstatesCommand.type,
                     locality = locality,
                     subCategory = subCategory ?: "",
                 ),
@@ -92,9 +92,9 @@ internal class BezrealitkyProvider(
                 pricePerM2 = price / size,
                 sizeInM2 = size.roundToInt().toDouble(), // rounding
                 currency = CurrencyType.CZK,
-                mainCategory = getEstatesCommand.type,
+                mainCategory = getRealEstatesCommand.type,
                 subCategory = subCategory,
-                transactionType = getEstatesCommand.transaction,
+                transactionType = getRealEstatesCommand.transaction,
                 provider = ProviderType.BEZREALITKY,
             )
         }
@@ -105,16 +105,16 @@ internal class BezrealitkyProvider(
         return "Unknown $data"
     }
 
-    private fun GetEstatesCommand.prepareOfferType() = when (transaction) {
+    private fun GetRealEstatesCommand.prepareOfferType() = when (transaction) {
         TransactionType.SALE -> "PRODEJ"
         TransactionType.RENT -> "PRONAJEM"
     }
 
-    private fun GetEstatesCommand.prepareEstateType() = when (type) {
+    private fun GetRealEstatesCommand.prepareEstateType() = when (type) {
         BuildingType.APARTMENT -> "BYT"
         BuildingType.HOUSE -> "DUM"
         BuildingType.LAND -> "POZEMEK"
     }
 
-    private fun GetEstatesCommand.calculatePage() = (offset / limit) + 1
+    private fun GetRealEstatesCommand.calculatePage() = (offset / limit) + 1
 }

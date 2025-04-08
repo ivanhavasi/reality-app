@@ -32,7 +32,7 @@ public class MongoIdentityAugmentor(
         try {
             securityIdentity.attributes["userinfo"] as UserInfo
         } catch (_: Exception) {
-            Log.error("Could not get userinfo from security identity")
+            Log.debug("Could not get userinfo from security identity")
             null
         }
 

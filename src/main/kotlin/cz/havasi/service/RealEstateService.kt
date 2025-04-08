@@ -5,10 +5,11 @@ import cz.havasi.model.ApartmentDuplicate
 import cz.havasi.model.BuildingType
 import cz.havasi.model.TransactionType
 import cz.havasi.model.command.ApartmentsAndDuplicates
-import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.command.GetRealEstatesCommand
 import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
+import cz.havasi.model.util.Paging
 import cz.havasi.repository.ApartmentRepository
-import cz.havasi.service.provider.EstatesProvider
+import cz.havasi.service.provider.RealEstatesProvider
 import cz.havasi.service.util.areDoublesEqualWithTolerance
 import cz.havasi.service.util.forEachAsync
 import io.quarkus.arc.All
@@ -18,22 +19,26 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 @ApplicationScoped
-public class RealityService(
+public class RealEstateService(
     private val apartmentRepository: ApartmentRepository,
     private val notificationService: NotificationService,
-    @All private val estateProviders: MutableList<EstatesProvider>,
+    @All private val realEstateProviders: MutableList<RealEstatesProvider>,
 ) {
     init {
-        Log.debug("Estate providers: $estateProviders")
+        Log.debug("Real Estate providers: $realEstateProviders")
     }
 
     public suspend fun fetchAndSaveApartmentsForSale(): Unit {
-        estateProviders.forEachAsync(message = "Fetching and saving apartments") {
+        realEstateProviders.forEachAsync(message = "Fetching and saving apartments") {
             fetchAndSaveApartmentsForProvider(it)
         }
     }
 
-    private suspend fun fetchAndSaveApartmentsForProvider(provider: EstatesProvider) {
+    public suspend fun getApartments(paging: Paging): List<Apartment> =
+        apartmentRepository
+            .findAll(paging)
+
+    private suspend fun fetchAndSaveApartmentsForProvider(provider: RealEstatesProvider) {
         val numberOfApartments = 22
         val maxCalls = 5
 
@@ -53,9 +58,9 @@ public class RealityService(
         }
     }
 
-    private suspend fun EstatesProvider.getApartments(offset: Int, limit: Int): List<Apartment> =
-        getEstates(
-            GetEstatesCommand(
+    private suspend fun RealEstatesProvider.getApartments(offset: Int, limit: Int): List<Apartment> =
+        getRealEstates(
+            GetRealEstatesCommand(
                 type = BuildingType.APARTMENT,
                 transaction = TransactionType.SALE,
                 offset = offset,
@@ -70,7 +75,7 @@ public class RealityService(
 
         forEach {
             val originalApartment = findOriginalApartment(it)
-            if (areApartmentsDuplicates(it, originalApartment).also { apt ->
+            if (areApartmentsDuplicates(it, originalApartment).also { _ ->
                     Log.info("Apartment ${it.id} is duplicate of ${originalApartment!!.id}, with sizeInM2 ${it.sizeInM2} vs ${originalApartment.sizeInM2}")
                 }) {
                 if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check- areApartmentsDuplicates

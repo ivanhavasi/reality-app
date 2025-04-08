@@ -1,7 +1,7 @@
 package cz.havasi.service.provider
 
 import cz.havasi.model.*
-import cz.havasi.model.command.GetEstatesCommand
+import cz.havasi.model.command.GetRealEstatesCommand
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.rest.client.IdnesClient
 import cz.havasi.service.util.constructFingerprint
@@ -13,10 +13,10 @@ import org.jsoup.Jsoup
 import kotlin.math.roundToInt
 
 @ApplicationScoped
-internal class IdnesProvider(
+internal class IdnesProviderReal(
     @RestClient private val idnesClient: IdnesClient,
-) : EstatesProvider {
-    override suspend fun getEstates(getEstatesCommand: GetEstatesCommand): List<Apartment> = with(getEstatesCommand) {
+) : RealEstatesProvider {
+    override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> = with(getRealEstatesCommand) {
         try {
             callClient()
         } catch (e: Exception) {
@@ -27,7 +27,7 @@ internal class IdnesProvider(
         }
     }
 
-    private suspend fun GetEstatesCommand.callClient(): List<Apartment> =
+    private suspend fun GetRealEstatesCommand.callClient(): List<Apartment> =
     // idnes does not support pagination
     // you can only do other pages
         // always returns 21 results
@@ -40,7 +40,7 @@ internal class IdnesProvider(
             .parseDataFromResponse(this)
 
     // ugly html parsing
-    private fun String.parseDataFromResponse(getEstatesCommand: GetEstatesCommand): List<Apartment> =
+    private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         Jsoup.parse(this).select(".c-products__inner").map {
             val linkElement = it.selectFirst("a.c-products__link")
             val titleElement = it.selectFirst(".c-products__title")
@@ -74,7 +74,7 @@ internal class IdnesProvider(
 
             Apartment(
                 id = id,
-                fingerprint = constructFingerprint(getEstatesCommand.type, locality, subCategory ?: ""),
+                fingerprint = constructFingerprint(getRealEstatesCommand.type, locality, subCategory ?: ""),
                 name = name,
                 url = url,
                 price = price,
@@ -82,9 +82,9 @@ internal class IdnesProvider(
                 sizeInM2 = size.roundToInt().toDouble(), // rounding
                 currency = CurrencyType.CZK,
                 locality = locality,
-                mainCategory = getEstatesCommand.type,
+                mainCategory = getRealEstatesCommand.type,
                 subCategory = subCategory,
-                transactionType = getEstatesCommand.transaction,
+                transactionType = getRealEstatesCommand.transaction,
                 images = listOf(imageUrl),
                 provider = ProviderType.IDNES,
             )
@@ -96,22 +96,22 @@ internal class IdnesProvider(
         return "Unknown $data"
     }
 
-    private fun GetEstatesCommand.getTransactionType(): String =
+    private fun GetRealEstatesCommand.getTransactionType(): String =
         when (transaction) {
             TransactionType.SALE -> "prodej"
             TransactionType.RENT -> "pronajem"
         }
 
-    private fun GetEstatesCommand.getBuildingType(): String =
+    private fun GetRealEstatesCommand.getBuildingType(): String =
         when (type) {
             BuildingType.HOUSE -> "domy"
             BuildingType.LAND -> "pozemky" // todo verify
             BuildingType.APARTMENT -> "byty"
         }
 
-    private fun GetEstatesCommand.getLocation(): String = "praha"
+    private fun GetRealEstatesCommand.getLocation(): String = "praha"
 
-    private fun GetEstatesCommand.calculatePage(): Int? =
+    private fun GetRealEstatesCommand.calculatePage(): Int? =
         let { offset / limit }
             .takeIf { it > 0 }
 }

@@ -4,6 +4,7 @@ import com.mongodb.client.model.*
 import cz.havasi.model.*
 import cz.havasi.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.model.enum.ProviderType
+import cz.havasi.model.util.Paging
 import cz.havasi.repository.ApartmentRepository
 import cz.havasi.repository.DatabaseNames.APARTMENT_COLLECTION_NAME
 import cz.havasi.repository.DatabaseNames.DB_NAME
@@ -19,7 +20,7 @@ import io.smallrye.mutiny.coroutines.awaitSuspending
 import jakarta.enterprise.context.ApplicationScoped
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.flow.toList
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
@@ -97,6 +98,13 @@ internal class MongoClientApartmentRepository(
         }
     }
 
+    override suspend fun findAll(paging: Paging): List<Apartment> =
+        mongoCollection
+            .find(paging.toFindOptions())
+            .asFlow()
+            .map { it.toModel() }
+            .toList()
+
     override suspend fun existsByIdOrFingerprint(id: String, fingerprint: String): Boolean {
         val filters = mutableListOf<Bson>()
         filters.add(Filters.eq("externalId", id))
@@ -118,8 +126,14 @@ internal class MongoClientApartmentRepository(
         return mongoCollection.find(Filters.or(filters), ApartmentEntity::class.java, options)
             .asFlow()
             .map { it.toModel() }
-            .toCollection(mutableListOf())
+            .toList()
     }
+
+    private fun Paging.toFindOptions() =
+        FindOptions()
+            .sort(Document(sortBy, sortDirection.value))
+            .limit(limit)
+            .skip(offset)
 
     private fun ApartmentEntity.toModel() =
         Apartment(

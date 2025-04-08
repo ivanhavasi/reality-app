@@ -1,6 +1,6 @@
 package cz.havasi.service.scheduler
 
-import cz.havasi.service.RealityService
+import cz.havasi.service.RealEstateService
 import io.quarkus.logging.Log
 import io.quarkus.scheduler.Scheduled
 import jakarta.enterprise.context.ApplicationScoped
@@ -9,7 +9,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty
 
 @ApplicationScoped
 internal class RealityScheduler(
-    private val realityService: RealityService,
+    private val realEstateService: RealEstateService,
     @ConfigProperty(name = "reality.scheduler.cron") private val cron: String,
 ) {
     @Scheduled(cron = "0 */30 6-23 * * ?")
@@ -18,7 +18,7 @@ internal class RealityScheduler(
 
         waitForRandomInterval()
         try {
-            realityService.fetchAndSaveApartmentsForSale()
+            realEstateService.fetchAndSaveApartmentsForSale()
         } catch (e: Exception) {
             Log.error(e.message)
             Log.error(e.stackTraceToString())
