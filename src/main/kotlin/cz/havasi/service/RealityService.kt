@@ -11,7 +11,6 @@ import cz.havasi.repository.ApartmentRepository
 import cz.havasi.service.provider.EstatesProvider
 import cz.havasi.service.util.areDoublesEqualWithTolerance
 import cz.havasi.service.util.forEachAsync
-//import cz.havasi.service.util.launchAndHandleException
 import io.quarkus.arc.All
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
@@ -71,7 +70,9 @@ public class RealityService(
 
         forEach {
             val originalApartment = findOriginalApartment(it)
-            if (areApartmentsDuplicates(it, originalApartment)) {
+            if (areApartmentsDuplicates(it, originalApartment).also { apt ->
+                    Log.info("Apartment ${it.id} is duplicate of ${originalApartment!!.id}, with sizeInM2 ${it.sizeInM2} vs ${originalApartment.sizeInM2}")
+                }) {
                 if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check- areApartmentsDuplicates
                     duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartment, it.toDuplicate()))
                 }

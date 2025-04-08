@@ -5,18 +5,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.joinAll
 
-//internal suspend fun launchAndHandleException(message: String, f: suspend () -> Unit) =
-//    async {
-//        Log.info("STARTTTT")
-//        try {
-//            Log.debug(message)
-
 internal suspend fun <T> List<T>.forEachAsync(message: String, f: suspend (T) -> Unit) =
     coroutineScope {
         Log.info(message)
         val jobs = map {
             async {
-                Log.info("STARTTTT")
                 try {
                     Log.debug(message)
                     f(it)
