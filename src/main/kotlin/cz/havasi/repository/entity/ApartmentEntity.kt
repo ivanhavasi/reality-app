@@ -33,7 +33,7 @@ public data class ApartmentDuplicateEntity(
     val url: String,
     val price: Double,
     val pricePerM2: Double?,
-    val images: List<String> = emptyList<String>(),
+    val images: List<String> = emptyList(),
     val provider: ProviderTypeEntity = ProviderTypeEntity.UNKNOWN,
 )
 

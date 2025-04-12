@@ -22,5 +22,6 @@ internal class WebhookNotificationEventHandler(
 
     private suspend fun HandleNotificationsEvent<WebhookNotification>.sendWebhooks(): Unit {
         Log.error("Webhook notification sender is not implemented yet!")
+        // save sent notification
     }
 }

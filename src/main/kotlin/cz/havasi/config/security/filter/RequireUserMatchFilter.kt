@@ -23,9 +23,8 @@ public class RequireUserMatchFilter(
 
     override fun filter(requestContext: ContainerRequestContext): Unit {
         val annotation = resourceInfo.resourceMethod.getAnnotation(RequireUserMatch::class.java)
-        if (annotation == null) {
-            return // skip if the annotation is not present
-        }
+            ?: return // skip if the annotation is not present
+
         if (identity.hasRole("ADMIN")) {
             return // skip if the user has admin role
         }

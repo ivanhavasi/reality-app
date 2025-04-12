@@ -16,7 +16,7 @@ import org.jboss.resteasy.reactive.RestResponse
 
 @Path("/real-estates")
 @Produces(MediaType.APPLICATION_JSON)
-internal class RealEstateController(
+internal open class RealEstateController(
     private val realEstateService: RealEstateService,
 ) {
     @POST
@@ -30,7 +30,7 @@ internal class RealEstateController(
 
     @GET
     @RolesAllowed("USER")
-    suspend fun getRealEstates(
+    open suspend fun getRealEstates(
         @QueryParam("offset") offset: Int = 0,
         @QueryParam("limit") limit: Int = 20,
         @QueryParam("sortDirection") sortDirection: String = "DESC",

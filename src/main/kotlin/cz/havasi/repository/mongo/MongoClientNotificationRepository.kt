@@ -168,6 +168,7 @@ internal class MongoClientNotificationRepository(
             is EmailNotificationEntity -> EmailNotification(
                 id = id.toHexString(),
                 name = name,
+                userId = userId.toHexString(),
                 filter = filter,
                 updatedAt = updatedAt,
                 createdAt = createdAt,
@@ -178,6 +179,7 @@ internal class MongoClientNotificationRepository(
             is WebhookNotificationEntity -> WebhookNotification(
                 id = id.toHexString(),
                 name = name,
+                userId = userId.toHexString(),
                 filter = filter,
                 updatedAt = updatedAt,
                 createdAt = createdAt,
@@ -188,6 +190,7 @@ internal class MongoClientNotificationRepository(
             is DiscordWebhookNotificationEntity -> DiscordWebhookNotification(
                 id = id.toHexString(),
                 name = name,
+                userId = userId.toHexString(),
                 filter = filter,
                 updatedAt = updatedAt,
                 createdAt = createdAt,

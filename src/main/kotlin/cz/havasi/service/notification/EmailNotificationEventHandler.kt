@@ -2,7 +2,9 @@ package cz.havasi.service.notification
 
 import cz.havasi.model.Apartment
 import cz.havasi.model.EmailNotification
+import cz.havasi.model.command.SaveSentNotificationsCommand
 import cz.havasi.model.event.HandleNotificationsEvent
+import cz.havasi.repository.SentNotificationRepository
 import cz.havasi.rest.client.MailjetClient
 import cz.havasi.rest.client.model.EmailAddress
 import cz.havasi.rest.client.model.MailjetEmail
@@ -19,8 +21,8 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 
 @ApplicationScoped
 internal class EmailNotificationEventHandler(
-    // todo, shouldnt this be just catching ApartmentCreatedEvent and then finding its own notifications? Better event handling
     @RestClient private val mailjetClient: MailjetClient, // todo, they have limits on max number of messages https://dev.mailjet.com/email/reference/send-emails#v3_1_post_send
+    private val sentNotificationRepository: SentNotificationRepository,
 ) : NotificationEventHandler<EmailNotification> {
 
     override fun handleNotifications(@Observes event: HandleNotificationsEvent<EmailNotification>) {
@@ -36,6 +38,13 @@ internal class EmailNotificationEventHandler(
 
         try {
             val response = mailjetClient.sendEmails(MailjetEmailWrapper(messages = emails))
+            sentNotificationRepository.saveSentNotifications(
+                SaveSentNotificationsCommand(
+                    notifications = notifications,
+                    apartment = apartment,
+                ),
+            )
+
             Log.info("Emails response status: ${response.status} for ${emails.size} emails")
         } catch (e: Exception) { // todo improve error handling, they have special error objects
             Log.error("Error sending emails", e)

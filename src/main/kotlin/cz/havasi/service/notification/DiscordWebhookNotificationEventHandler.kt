@@ -2,8 +2,10 @@ package cz.havasi.service.notification
 
 import cz.havasi.model.Apartment
 import cz.havasi.model.DiscordWebhookNotification
+import cz.havasi.model.command.SaveSentNotificationsCommand
 import cz.havasi.model.enum.ProviderType
 import cz.havasi.model.event.HandleNotificationsEvent
+import cz.havasi.repository.SentNotificationRepository
 import cz.havasi.rest.client.DiscordClient
 import cz.havasi.rest.client.model.DiscordEmbed
 import cz.havasi.rest.client.model.DiscordField
@@ -22,6 +24,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 @ApplicationScoped
 internal class DiscordWebhookNotificationEventHandler(
     @RestClient private val discordClient: DiscordClient,
+    private val sentNotificationRepository: SentNotificationRepository,
 ) : NotificationEventHandler<DiscordWebhookNotification> {
 
     override fun handleNotifications(@Observes event: HandleNotificationsEvent<DiscordWebhookNotification>) {
@@ -39,6 +42,13 @@ internal class DiscordWebhookNotificationEventHandler(
                     webhookToken = notification.token,
                     body = apartment.toBody(),
                 )
+                sentNotificationRepository.saveSentNotifications(
+                    SaveSentNotificationsCommand(
+                        notifications = listOf(notification),
+                        apartment = apartment,
+                    ),
+                )
+
                 Log.info("Webhooks response status: ${response.status} for ${notifications.size} webhooks")
             } catch (e: Exception) {
                 Log.error("Error sending webhooks", e)
@@ -63,10 +73,10 @@ internal class DiscordWebhookNotificationEventHandler(
 
     private fun Apartment.resolveColor(): Int =
         when (provider) {
-            ProviderType.SREALITY -> 13705505
-            ProviderType.IDNES -> 2455546
-            ProviderType.BEZREALITKY -> 3773963
-            ProviderType.UNKNOWN -> 14593814
+            ProviderType.SREALITY -> 13705505 // red
+            ProviderType.IDNES -> 2455546 // blue
+            ProviderType.BEZREALITKY -> 3773963 // green
+            ProviderType.UNKNOWN -> 14593814 // yellow
         }
 
     private fun List<String>.getThumbnailData() = DiscordUrl(
