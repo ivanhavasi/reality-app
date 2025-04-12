@@ -22,7 +22,7 @@ internal class RealEstateController(
     @POST
     @RolesAllowed("ADMIN")
     @Path("/process")
-    fun processNewRealEstates(): RestResponse<Any> =
+    fun processNewRealEstates(): RestResponse<Nothing> =
         CoroutineScope(Dispatchers.IO).launch {
             realEstateService.fetchAndSaveApartmentsForSale()
         }

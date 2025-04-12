@@ -65,7 +65,7 @@ internal open class UserController(
     open suspend fun removeUserNotification(
         @PathParam("userId") userId: String,
         @PathParam("notificationId") notificationId: String,
-    ): RestResponse<Any> =
+    ): RestResponse<Nothing> =
         notificationService
             .removeUserNotification(RemoveUserNotificationCommand(userId, notificationId))
             .takeIf { it }
