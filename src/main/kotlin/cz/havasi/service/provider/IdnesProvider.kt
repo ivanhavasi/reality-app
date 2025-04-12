@@ -13,16 +13,14 @@ import org.jsoup.Jsoup
 import kotlin.math.roundToInt
 
 @ApplicationScoped
-internal class IdnesProviderReal(
+internal class IdnesProvider(
     @RestClient private val idnesClient: IdnesClient,
 ) : RealEstatesProvider {
     override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> = with(getRealEstatesCommand) {
         try {
             callClient()
         } catch (e: Exception) {
-            Log.error("Error while fetching iDnes data, page ${calculatePage()}")
-            Log.error(e.message)
-            Log.error(e.stackTraceToString())
+            Log.error("Error while fetching iDnes data, page ${calculatePage()}", e)
             emptyList()
         }
     }

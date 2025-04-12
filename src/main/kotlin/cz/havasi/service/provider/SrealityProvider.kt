@@ -15,18 +15,15 @@ import org.eclipse.microprofile.rest.client.inject.RestClient
 import kotlin.math.roundToInt
 
 @ApplicationScoped
-public class SrealityProviderReal internal constructor(
+public class SrealityProvider internal constructor(
     @RestClient private val srealityClient: SrealityClient,
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : RealEstatesProvider {
     override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> = with(getRealEstatesCommand) {
         try {
-            Log.debug("Searching sreality estates. limit ${getRealEstatesCommand.limit}, offset ${getRealEstatesCommand.offset}")
             callClient()
         } catch (e: Exception) {
-            Log.error("Error while fetching sreality data, limit $limit, offset $offset")
-            Log.error(e.message)
-            Log.error(e.stackTraceToString())
+            Log.error("Error while fetching sreality data, limit $limit, offset $offset", e)
             emptyList()
         }
     }

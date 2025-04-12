@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets
 import kotlin.math.roundToInt
 
 @ApplicationScoped
-internal class BezrealitkyProviderReal(
+internal class BezrealitkyProvider(
     @RestClient private val bezrealitkyClient: BezrealitkyClient,
     @ConfigProperty(name = "quarkus.rest-client.bezrealitky-api.url") private val baseUrl: String,
 ) : RealEstatesProvider {
@@ -23,9 +23,7 @@ internal class BezrealitkyProviderReal(
         try {
             callClient()
         } catch (e: Exception) {
-            Log.error("Error while fetching Bezrealitky data, page ${calculatePage()}")
-            Log.error(e.message)
-            Log.error(e.stackTraceToString())
+            Log.error("Error while fetching Bezrealitky data, page ${calculatePage()}", e)
             emptyList()
         }
     }

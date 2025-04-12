@@ -43,7 +43,6 @@ public class RealEstateService(
         val maxCalls = 5
 
         for (i in 0 until maxCalls) {
-            Log.info("Fetching apartments for provider $provider, call $i")
             val apartments = provider
                 .getApartments(i * numberOfApartments, numberOfApartments)
                 .filterApartments()
@@ -51,7 +50,7 @@ public class RealEstateService(
                 .sendNotifications()
 
             if (apartments.isEmpty()) {
-                Log.info("No more apartments to save for provider $provider")
+                Log.debug("No more apartments to save for provider $provider")
                 break
             }
             delay(Random.nextLong(700, 2500))
@@ -75,9 +74,7 @@ public class RealEstateService(
 
         forEach {
             val originalApartment = findOriginalApartment(it)
-            if (areApartmentsDuplicates(it, originalApartment).also { _ ->
-                    Log.info("Apartment ${it.id} is duplicate of ${originalApartment!!.id}, with sizeInM2 ${it.sizeInM2} vs ${originalApartment.sizeInM2}")
-                }) {
+            if (areApartmentsDuplicates(it, originalApartment)) {
                 if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check- areApartmentsDuplicates
                     duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartment, it.toDuplicate()))
                 }
@@ -86,7 +83,6 @@ public class RealEstateService(
             }
         }
 
-        Log.info("Saving ${newApartments.size} apartments and ${duplicates.size} duplicates (vs $size fetched)")
         return ApartmentsAndDuplicates(newApartments, duplicates)
     }
 
@@ -110,13 +106,7 @@ public class RealEstateService(
         var minPrice = originalApartment.duplicates.minOfOrNull { it.price } ?: originalApartment.price
         minPrice = minOf(minPrice, originalApartment.price)
 
-        Log.info("Duplicate resolution for apartmentId ${originalApartment.id} (duplicateId ${duplicate.id}), found providers: $foundProviders, its provider ${originalApartment.provider}, price ${originalApartment.price} (min price $minPrice), duplicate price ${duplicate.price}")
-        if (duplicate.price >= minPrice && foundProviders.contains(duplicate.provider)) {
-            Log.info("Ignoring duplicate apartment ${duplicate.id}, because its price is the same or higher than the original apartment")
-            return false
-        }
-        Log.info("Continueing with duplicate apartment ${duplicate.id}, because its price is lower than the original apartment")
-        return true
+        return (duplicate.price < minPrice || !foundProviders.contains(duplicate.provider))
     }
 
     private suspend fun List<Apartment>.sendNotifications() = also {
