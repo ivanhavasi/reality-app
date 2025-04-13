@@ -1,5 +1,6 @@
 package cz.havasi.repository.entity
 
+import cz.havasi.repository.entity.enum.NotificationTypeEntity
 import cz.havasi.repository.entity.enum.ProviderTypeEntity
 import io.quarkus.runtime.annotations.RegisterForReflection
 import org.bson.types.ObjectId
@@ -10,7 +11,7 @@ internal data class SentNotificationEntity(
     val _id: ObjectId,
     val notificationId: ObjectId,
     val userId: ObjectId,
-    val type: String, // discord, webhook, email
+    val type: NotificationTypeEntity,
     val realEstate: SentNotificationRealEstateEntity,
     val sentAt: OffsetDateTime,
 )

@@ -1,5 +1,6 @@
 package cz.havasi.model
 
+import cz.havasi.model.enum.NotificationType
 import java.time.OffsetDateTime
 
 public sealed interface Notification {
@@ -10,6 +11,7 @@ public sealed interface Notification {
     public val updatedAt: OffsetDateTime
     public val createdAt: OffsetDateTime
     public val enabled: Boolean
+    public val type: NotificationType
 }
 
 public data class EmailNotification(
@@ -21,7 +23,9 @@ public data class EmailNotification(
     override val createdAt: OffsetDateTime,
     val email: String,
     override val enabled: Boolean,
-) : Notification
+) : Notification {
+    override val type: NotificationType = NotificationType.EMAIL
+}
 
 public data class WebhookNotification(
     override val id: String,
@@ -32,7 +36,9 @@ public data class WebhookNotification(
     override val createdAt: OffsetDateTime,
     val url: String,
     override val enabled: Boolean,
-) : Notification
+) : Notification {
+    override val type: NotificationType = NotificationType.WEBHOOK
+}
 
 public data class DiscordWebhookNotification(
     override val id: String,
@@ -44,4 +50,6 @@ public data class DiscordWebhookNotification(
     val webhookId: String,
     val token: String, // todo hash with secret
     override val enabled: Boolean,
-) : Notification
+) : Notification {
+    override val type: NotificationType = NotificationType.DISCORD
+}

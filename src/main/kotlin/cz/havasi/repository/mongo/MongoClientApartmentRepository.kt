@@ -12,6 +12,7 @@ import cz.havasi.repository.entity.ApartmentDuplicateEntity
 import cz.havasi.repository.entity.ApartmentEntity
 import cz.havasi.repository.entity.LocalityEntity
 import cz.havasi.repository.entity.enum.ProviderTypeEntity
+import cz.havasi.repository.util.toFindOptions
 import io.quarkus.logging.Log
 import io.quarkus.mongodb.FindOptions
 import io.quarkus.mongodb.reactive.ReactiveMongoClient
@@ -43,11 +44,10 @@ internal class MongoClientApartmentRepository(
             ?.asObjectId()
             ?.value
             ?.toHexString()
-            ?: throw error("Apartment with id ${apartment.id} was not saved into mongodb.")
+            ?: error("Apartment with id ${apartment.id} was not saved into mongodb.")
 
     override suspend fun saveAll(apartments: List<Apartment>): List<ObjectId> =
         try {
-            Log.info("Saving apartments: ${apartments.map { it.id }}")
             mongoCollection
                 .insertMany(
                     apartments.map {
@@ -58,7 +58,7 @@ internal class MongoClientApartmentRepository(
                 ?.awaitSuspending()
                 ?.insertedIds
                 ?.map { it.value.asObjectId().value }
-                ?: throw error("No apartments were saved among the ids: ${apartments.map { a -> a.id }}")
+                ?: error("No apartments were saved among the ids: ${apartments.map { a -> a.id }}")
         } catch (e: Exception) {
             Log.error("Error while saving apartments", e)
             emptyList()
@@ -75,22 +75,19 @@ internal class MongoClientApartmentRepository(
             )
         }
         if (bulkUpdates.isEmpty()) {
-            Log.warn("No updates to perform for apartments: ${apartmentsWithDuplicates.map { it.apartment.id }}")
             return // No updates to perform
         }
 
         val result = try {
-            Log.info("BulkWriting apartments: ${apartmentsWithDuplicates.map { it.apartment.id }}")
-            mongoCollection.bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false))
+            mongoCollection
+                .bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false)) // all writes should finish even if one fails
                 .awaitSuspending()
         } catch (e: Throwable) {
-            Log.error("Error whilebulkWrite apartments: ${apartmentsWithDuplicates.map { it.apartment.id }}", e)
+            Log.error("Error while bulkWriting apartments: ${apartmentsWithDuplicates.map { it.apartment.id }}", e)
             return
         }
 
-        Log.debug("Bulk write update count: ${result.modifiedCount} out of ${apartmentsWithDuplicates.size}")
         if (result.modifiedCount != apartmentsWithDuplicates.size) {
-            Log.error(result)
             Log.error(
                 "Not all apartments were updated. Expected ${apartmentsWithDuplicates.size} but got" +
                     "${result.modifiedCount}. All apartmentIds: ${apartmentsWithDuplicates.map { it.apartment.id }}",
@@ -128,12 +125,6 @@ internal class MongoClientApartmentRepository(
             .map { it.toModel() }
             .toList()
     }
-
-    private fun Paging.toFindOptions() =
-        FindOptions()
-            .sort(Document(sortBy, sortDirection.value))
-            .limit(limit)
-            .skip(offset)
 
     private fun ApartmentEntity.toModel() =
         Apartment(
