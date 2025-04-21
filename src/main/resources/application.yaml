@@ -1,4 +1,8 @@
 quarkus:
+  http:
+    cors:
+      ~: true
+      access-control-allow-credentials: true
   oidc:
     application-type: service
     provider: google

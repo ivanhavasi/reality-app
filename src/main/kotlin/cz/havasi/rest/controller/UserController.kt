@@ -13,24 +13,35 @@ import cz.havasi.rest.controller.util.wrapToOk
 import cz.havasi.service.NotificationService
 import cz.havasi.service.SentNotificationService
 import cz.havasi.service.UserService
+import io.quarkus.security.identity.SecurityIdentity
+import jakarta.annotation.security.RolesAllowed
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
 import org.jboss.resteasy.reactive.RestResponse
 
-@Path("/users")
+@Path("/api/users")
 @Produces(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 internal open class UserController(
     private val userService: UserService,
     private val notificationService: NotificationService,
     private val sentNotificationService: SentNotificationService,
+    private val identity: SecurityIdentity,
 ) {
     // shouldn't be called
     open suspend fun createUser(createUserCommand: CreateUserCommand): RestResponse<ResponseId> =
         userService
             .createUser(createUserCommand)
             .let { ResponseId(it).wrapToOk() }
+
+    @GET
+    @Path("/me")
+    @RolesAllowed("USER")
+    open suspend fun getMe(): RestResponse<User> =
+        userService
+            .getUserById(identity.getAttribute("id"))
+            .wrapToOk()
 
     @GET
     @Path("/{userId}")

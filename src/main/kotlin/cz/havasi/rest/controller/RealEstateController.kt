@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.jboss.resteasy.reactive.RestResponse
 
-@Path("/real-estates")
+@Path("/api/real-estates")
 @Produces(MediaType.APPLICATION_JSON)
 internal open class RealEstateController(
     private val realEstateService: RealEstateService,
