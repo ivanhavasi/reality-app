@@ -62,4 +62,3 @@ public class DiscordWebhookNotificationEntity @BsonCreator constructor(
     @BsonProperty("token") public val token: String,
     @BsonProperty("enabled") public override val enabled: Boolean,
 ) : NotificationEntity
-
