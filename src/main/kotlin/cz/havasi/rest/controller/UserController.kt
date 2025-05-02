@@ -15,21 +15,19 @@ import cz.havasi.service.SentNotificationService
 import cz.havasi.service.UserService
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.annotation.security.RolesAllowed
-import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.MediaType
 import org.jboss.resteasy.reactive.RestResponse
 
 @Path("/api/users")
 @Produces(MediaType.APPLICATION_JSON)
-@ApplicationScoped
 internal open class UserController(
     private val userService: UserService,
     private val notificationService: NotificationService,
     private val sentNotificationService: SentNotificationService,
     private val identity: SecurityIdentity,
 ) {
-    // shouldn't be called
+    @Deprecated("Shouldn't be directly called by the client or another function as user is created while logging if for the first time.")
     open suspend fun createUser(createUserCommand: CreateUserCommand): RestResponse<ResponseId> =
         userService
             .createUser(createUserCommand)
@@ -77,10 +75,10 @@ internal open class UserController(
     @Path("/{userId}/notifications/sent")
     open suspend fun getUserSentNotifications(
         @PathParam("userId") userId: String,
-        @QueryParam("offset") offset: Int = 0,
-        @QueryParam("limit") limit: Int = 20,
-        @QueryParam("apartmentId") apartmentId: String? = null,
-        @QueryParam("notificationType") notificationType: String? = null,
+        @DefaultValue("0") @QueryParam("offset") offset: Int,
+        @DefaultValue("20") @QueryParam("limit") limit: Int,
+        @QueryParam("apartmentId") apartmentId: String?,
+        @QueryParam("notificationType") notificationType: String?,
     ): RestResponse<List<SentNotification>> =
         sentNotificationService
             .getSentNotifications(
@@ -110,16 +108,17 @@ internal open class UserController(
     ) = GetSentNotifications(
         userId = userId,
         paging = Paging(
-            offset = offset.coerceIn(0, 20),
-            limit = limit.coerceIn(0, 20),
+            offset = offset.coerceAtLeast(0),
+            limit = limit.coerceIn(10, 20),
             sortBy = "sentAt",
         ),
         apartmentId = apartmentId,
         notificationType = notificationType?.let {
-            try {
-                NotificationType.valueOf(it)
-            } catch (e: IllegalArgumentException) {
-                null // todo throw exception for invalid type
+            when (it) {
+                "discord" -> NotificationType.DISCORD
+                "email" -> NotificationType.EMAIL
+                "webhook" -> NotificationType.WEBHOOK
+                else -> null
             }
         },
     )

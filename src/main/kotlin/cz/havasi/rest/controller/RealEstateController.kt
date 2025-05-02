@@ -31,14 +31,14 @@ internal open class RealEstateController(
     @GET
     @RolesAllowed("USER")
     open suspend fun getRealEstates(
-        @QueryParam("offset") offset: Int = 0,
-        @QueryParam("limit") limit: Int = 20,
-        @QueryParam("sortDirection") sortDirection: String = "DESC",
+        @DefaultValue("0") @QueryParam("offset") offset: Int,
+        @DefaultValue("20") @QueryParam("limit") limit: Int,
+        @DefaultValue("DESC") @QueryParam("sortDirection") sortDirection: String,
     ): RestResponse<List<Apartment>> =
         realEstateService.getApartments(
             Paging(
-                offset = offset.coerceIn(0, 20),
-                limit = limit.coerceIn(0, 20),
+                offset = offset.coerceAtLeast(0),
+                limit = limit.coerceIn(10, 20),
                 sortDirection = sortDirection.toSortDirection(),
             ),
         )
