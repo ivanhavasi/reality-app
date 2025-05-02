@@ -1,50 +1,62 @@
 package cz.havasi.service
 
-import cz.havasi.model.Apartment
-import cz.havasi.model.DiscordWebhookNotification
-import cz.havasi.model.EmailNotification
-import cz.havasi.model.Notification
-import cz.havasi.model.WebhookNotification
+import cz.havasi.model.*
 import cz.havasi.model.command.AddUserNotificationCommand
-import cz.havasi.model.command.FindNotificationsForFilterCommand
-import cz.havasi.model.command.RemoveUserNotificationCommand
+import cz.havasi.model.command.FindUserNotificationsForFilterCommand
+import cz.havasi.model.command.UpdateUserNotificationCommand
 import cz.havasi.model.event.HandleNotificationsEvent
-import cz.havasi.repository.NotificationRepository
+import cz.havasi.repository.UserNotificationRepository
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Event
 
 @ApplicationScoped
-public class NotificationService(
-    private val notificationRepository: NotificationRepository,
+public class UserNotificationService(
+    private val userNotificationRepository: UserNotificationRepository,
     private val emailNotificationSender: Event<HandleNotificationsEvent<EmailNotification>>,
     private val webhookNotificationSender: Event<HandleNotificationsEvent<WebhookNotification>>,
     private val discordWebhookNotificationSender: Event<HandleNotificationsEvent<DiscordWebhookNotification>>,
 ) {
-    public suspend fun sendNotificationsForApartments(apartments: List<Apartment>) {
+    public suspend fun sendUserNotificationsForApartments(apartments: List<Apartment>) {
         apartments.forEach { apartment ->
             apartment
-                .getValidNotifications()
-                .sendNotifications(apartment)
+                .getValidUserNotifications()
+                .sendUserNotifications(apartment)
         }
     }
 
     public suspend fun addUserNotification(addUserNotificationCommand: AddUserNotificationCommand): String =
-        notificationRepository.addUserNotification(addUserNotificationCommand)
+        userNotificationRepository.addUserNotification(addUserNotificationCommand)
 
-    public suspend fun removeUserNotification(removeUserNotificationCommand: RemoveUserNotificationCommand): Boolean =
-        notificationRepository.removeUserNotification(removeUserNotificationCommand)
+    public suspend fun removeUserNotification(notificationId: String): Boolean =
+        userNotificationRepository.removeUserNotification(notificationId)
 
     public suspend fun getUserNotifications(userId: String): List<Notification> =
-        notificationRepository.getUserNotifications(userId)
+        userNotificationRepository.getUserNotifications(userId)
 
-    private suspend fun Apartment.getValidNotifications() =
-        notificationRepository.findNotificationsForFilter(toFilterCommand())
+    public suspend fun enableUserNotification(notificationId: String): Boolean =
+        userNotificationRepository.updateUserNotification(
+            UpdateUserNotificationCommand(
+                notificationId = notificationId,
+                enabled = true,
+            ),
+        )
+
+    public suspend fun disableUserNotification(notificationId: String): Boolean =
+        userNotificationRepository.updateUserNotification(
+            UpdateUserNotificationCommand(
+                notificationId = notificationId,
+                enabled = false,
+            ),
+        )
+
+    private suspend fun Apartment.getValidUserNotifications() =
+        userNotificationRepository.findUserNotificationsForFilter(toFilterCommand())
             .also {
                 Log.info("Found ${it.size} notifications for apartment ${this.id}")
             }
 
-    private fun List<Notification>.sendNotifications(apartment: Apartment) {
+    private fun List<Notification>.sendUserNotifications(apartment: Apartment) {
         val emailNotifications = mutableListOf<EmailNotification>()
         val webhookNotifications = mutableListOf<WebhookNotification>()
         val discordNotifications = mutableListOf<DiscordWebhookNotification>()
@@ -72,7 +84,7 @@ public class NotificationService(
     }
 
     private fun Apartment.toFilterCommand() =
-        FindNotificationsForFilterCommand(
+        FindUserNotificationsForFilterCommand(
             buildingType = mainCategory,
             transactionType = transactionType,
             price = price.toInt(),

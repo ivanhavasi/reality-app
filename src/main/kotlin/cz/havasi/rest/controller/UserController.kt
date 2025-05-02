@@ -4,14 +4,17 @@ import cz.havasi.config.security.RequireUserMatch
 import cz.havasi.model.Notification
 import cz.havasi.model.SentNotification
 import cz.havasi.model.User
-import cz.havasi.model.command.*
+import cz.havasi.model.command.AddNotificationCommand
+import cz.havasi.model.command.AddUserNotificationCommand
+import cz.havasi.model.command.CreateUserCommand
+import cz.havasi.model.command.GetSentNotifications
 import cz.havasi.model.enum.NotificationType
 import cz.havasi.model.util.Paging
 import cz.havasi.rest.controller.model.ResponseId
 import cz.havasi.rest.controller.util.wrapToNoContent
 import cz.havasi.rest.controller.util.wrapToOk
-import cz.havasi.service.NotificationService
 import cz.havasi.service.SentNotificationService
+import cz.havasi.service.UserNotificationService
 import cz.havasi.service.UserService
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.annotation.security.RolesAllowed
@@ -23,7 +26,7 @@ import org.jboss.resteasy.reactive.RestResponse
 @Produces(MediaType.APPLICATION_JSON)
 internal open class UserController(
     private val userService: UserService,
-    private val notificationService: NotificationService,
+    private val userNotificationService: UserNotificationService,
     private val sentNotificationService: SentNotificationService,
     private val identity: SecurityIdentity,
 ) {
@@ -56,7 +59,7 @@ internal open class UserController(
         @PathParam("userId") userId: String,
         addNotificationCommand: AddNotificationCommand,
     ): RestResponse<ResponseId> =
-        notificationService
+        userNotificationService
             .addUserNotification(AddUserNotificationCommand(userId, addNotificationCommand))
             .let { ResponseId(it).wrapToOk() }
 
@@ -66,7 +69,7 @@ internal open class UserController(
     open suspend fun getUserNotifications(
         @PathParam("userId") userId: String,
     ): RestResponse<List<Notification>> =
-        notificationService
+        userNotificationService
             .getUserNotifications(userId)
             .wrapToOk()
 
@@ -93,11 +96,37 @@ internal open class UserController(
         @PathParam("userId") userId: String,
         @PathParam("notificationId") notificationId: String,
     ): RestResponse<Nothing> =
-        notificationService
-            .removeUserNotification(RemoveUserNotificationCommand(userId, notificationId))
+        userNotificationService
+            .removeUserNotification(notificationId)
             .takeIf { it }
             ?.wrapToNoContent()
             ?: throw ServerErrorException("Notification was not removed.", 500)
+
+    @POST
+    @RequireUserMatch
+    @Path("/{userId}/notifications/{notificationId}/enable")
+    open suspend fun enableUserNotification(
+        @PathParam("userId") userId: String,
+        @PathParam("notificationId") notificationId: String,
+    ): RestResponse<Nothing> =
+        userNotificationService
+            .enableUserNotification(notificationId)
+            .takeIf { it }
+            ?.wrapToNoContent()
+            ?: throw ServerErrorException("Notification was not enabled.", 500)
+
+    @POST
+    @RequireUserMatch
+    @Path("/{userId}/notifications/{notificationId}/disable")
+    open suspend fun disableUserNotification(
+        @PathParam("userId") userId: String,
+        @PathParam("notificationId") notificationId: String,
+    ): RestResponse<Nothing> =
+        userNotificationService
+            .disableUserNotification(notificationId)
+            .takeIf { it }
+            ?.wrapToNoContent()
+            ?: throw ServerErrorException("Notification was not disabled.", 500)
 
     private fun createGetSentNotificationsCommand(
         userId: String,

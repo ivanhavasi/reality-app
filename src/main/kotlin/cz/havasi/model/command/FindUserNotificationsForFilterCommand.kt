@@ -3,7 +3,7 @@ package cz.havasi.model.command
 import cz.havasi.model.BuildingType
 import cz.havasi.model.TransactionType
 
-public data class FindNotificationsForFilterCommand(
+public data class FindUserNotificationsForFilterCommand(
     val buildingType: BuildingType,
     val transactionType: TransactionType,
     val size: Double,

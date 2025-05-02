@@ -21,7 +21,7 @@ import kotlin.random.Random
 @ApplicationScoped
 public class RealEstateService(
     private val apartmentRepository: ApartmentRepository,
-    private val notificationService: NotificationService,
+    private val userNotificationService: UserNotificationService,
     @All private val realEstateProviders: MutableList<RealEstatesProvider>,
 ) {
     init {
@@ -110,7 +110,7 @@ public class RealEstateService(
     }
 
     private suspend fun List<Apartment>.sendNotifications() = also {
-        notificationService.sendNotificationsForApartments(this)
+        userNotificationService.sendUserNotificationsForApartments(this)
     }
 
     private suspend fun ApartmentsAndDuplicates.saveApartments(): List<Apartment> = let {
