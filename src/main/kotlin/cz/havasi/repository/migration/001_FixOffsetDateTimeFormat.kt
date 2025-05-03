@@ -7,7 +7,7 @@ import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.Updates
 import com.mongodb.client.model.WriteModel
 import cz.havasi.repository.DatabaseNames.APARTMENT_COLLECTION_NAME
-import cz.havasi.repository.DatabaseNames.NOTIFICATION_COLLECTION_NAME
+import cz.havasi.repository.DatabaseNames.USER_NOTIFICATION_COLLECTION_NAME
 import cz.havasi.repository.DatabaseNames.USER_COLLECTION_NAME
 import io.mongock.api.annotations.ChangeUnit
 import io.mongock.api.annotations.Execution
@@ -30,7 +30,7 @@ public class FixOffsetDateTimeFormat {
     public fun migration(mongoDatabase: MongoDatabase): Unit = runBlocking {
         val apartments = mongoDatabase.getCollection(APARTMENT_COLLECTION_NAME)
         val users = mongoDatabase.getCollection(USER_COLLECTION_NAME)
-        val notifications = mongoDatabase.getCollection(NOTIFICATION_COLLECTION_NAME)
+        val notifications = mongoDatabase.getCollection(USER_NOTIFICATION_COLLECTION_NAME)
 
         updateFieldToDateType(apartments, CREATED_AT)
         updateFieldToDateType(apartments, UPDATED_AT)

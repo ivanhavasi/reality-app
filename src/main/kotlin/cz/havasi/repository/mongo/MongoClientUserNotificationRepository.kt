@@ -8,7 +8,7 @@ import cz.havasi.model.Notification
 import cz.havasi.model.WebhookNotification
 import cz.havasi.model.command.*
 import cz.havasi.repository.DatabaseNames.DB_NAME
-import cz.havasi.repository.DatabaseNames.NOTIFICATION_COLLECTION_NAME
+import cz.havasi.repository.DatabaseNames.USER_NOTIFICATION_COLLECTION_NAME
 import cz.havasi.repository.UserNotificationRepository
 import cz.havasi.repository.entity.DiscordWebhookNotificationEntity
 import cz.havasi.repository.entity.EmailNotificationEntity
@@ -29,22 +29,8 @@ import java.time.ZoneOffset.UTC
 internal class MongoClientUserNotificationRepository(
     private val reactiveMongoClient: ReactiveMongoClient,
 ) : UserNotificationRepository {
-
-    // todo create index like this
-    /*
-    {
-      "filter.buildingType": 1,
-      "filter.transactionType": 1,
-      "filter.size.from": 1,
-      "filter.size.to": 1,
-      "filter.price.from": 1,
-      "filter.price.to": 1
-    }
-     */
-
-    private val mongoCollection =
-        reactiveMongoClient.getDatabase(DB_NAME)
-            .getCollection(NOTIFICATION_COLLECTION_NAME, NotificationEntity::class.java)
+    private val mongoCollection = reactiveMongoClient.getDatabase(DB_NAME)
+        .getCollection(USER_NOTIFICATION_COLLECTION_NAME, NotificationEntity::class.java)
 
     override suspend fun addUserNotification(command: AddUserNotificationCommand): String =
         mongoCollection.insertOne(command.toEntity())
@@ -118,7 +104,7 @@ internal class MongoClientUserNotificationRepository(
      *
      * @param T the type of the number, a subclass of `Number`
      * @param filterList the list of BSON filters
-     * @param name the filter field name, only 'size' and 'price' are supported // todo validate it, maybe add enum
+     * @param name the filter field name, only 'size' and 'price' are supported
      */
     private fun <T : Number> T.addRangeFilter(filterList: MutableList<Bson>, name: String) {
         let {
@@ -137,7 +123,7 @@ internal class MongoClientUserNotificationRepository(
         }
     }
 
-    fun AddUserNotificationCommand.toEntity() =
+    private fun AddUserNotificationCommand.toEntity() =
         when (notification) {
             is EmailNotificationCommand -> EmailNotificationEntity(
                 id = ObjectId.get(),
