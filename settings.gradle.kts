@@ -11,3 +11,12 @@ pluginManagement {
     }
 }
 rootProject.name = "reality-app"
+
+include("application")
+include("model")
+include("service")
+include("mongo")
+include("rest")
+include("bezrealitky")
+include("sreality")
+include("idnes")
