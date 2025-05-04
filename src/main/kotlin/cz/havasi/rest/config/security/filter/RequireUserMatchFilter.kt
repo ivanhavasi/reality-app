@@ -1,6 +1,6 @@
-package cz.havasi.config.security.filter
+package cz.havasi.rest.config.security.filter
 
-import cz.havasi.config.security.RequireUserMatch
+import cz.havasi.rest.config.security.RequireUserMatch
 import io.quarkus.security.identity.SecurityIdentity
 import jakarta.annotation.Priority
 import jakarta.enterprise.context.ApplicationScoped

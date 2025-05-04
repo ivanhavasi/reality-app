@@ -1,4 +1,4 @@
-package cz.havasi.config.security
+package cz.havasi.rest.config.security
 
 import jakarta.annotation.security.RolesAllowed
 import kotlin.annotation.AnnotationRetention.RUNTIME

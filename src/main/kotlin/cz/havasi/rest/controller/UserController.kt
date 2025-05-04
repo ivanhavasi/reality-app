@@ -1,6 +1,6 @@
 package cz.havasi.rest.controller
 
-import cz.havasi.config.security.RequireUserMatch
+import cz.havasi.rest.config.security.RequireUserMatch
 import cz.havasi.model.Notification
 import cz.havasi.model.SentNotification
 import cz.havasi.model.User

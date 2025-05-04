@@ -1,4 +1,4 @@
-package cz.havasi.config.security
+package cz.havasi.rest.config.security
 
 import cz.havasi.model.User
 import cz.havasi.model.command.CreateUserCommand
