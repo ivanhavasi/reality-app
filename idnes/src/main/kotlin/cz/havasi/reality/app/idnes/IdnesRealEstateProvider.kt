@@ -9,13 +9,14 @@ import cz.havasi.reality.app.service.util.constructFingerprint
 import cz.havasi.reality.app.service.util.firstCapitalOthersLowerCase
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
+import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jboss.resteasy.reactive.RestResponse
 import org.jsoup.Jsoup
 import kotlin.math.roundToInt
 
 @ApplicationScoped
 internal class IdnesRealEstateProvider(
-    private val idnesApi: IdnesApi,
+    @RestClient private val idnesApi: IdnesApi,
 ) : RealEstatesProvider {
     override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         with(getRealEstatesCommand) {

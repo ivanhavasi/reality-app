@@ -13,12 +13,13 @@ import cz.havasi.reality.app.sreality.model.SrealitySearchResult
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.config.inject.ConfigProperty
+import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jboss.resteasy.reactive.RestResponse
 import kotlin.math.roundToInt
 
 @ApplicationScoped
 internal class SrealityRealEstatesProvider(
-    private val srealityApi: SrealityApi,
+    @RestClient private val srealityApi: SrealityApi,
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : RealEstatesProvider {
     override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
