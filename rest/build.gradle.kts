@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm") version "2.0.21"
-    id("io.quarkus")
 }
 
 group = "cz.havasi.reality.app"

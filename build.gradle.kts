@@ -6,6 +6,10 @@ plugins {
 group = "cz.havasi"
 version = "1.0.0-SNAPSHOT"
 
+dependencies {
+    implementation(project(":application"))
+}
+
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
