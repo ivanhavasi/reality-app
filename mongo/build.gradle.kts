@@ -28,8 +28,6 @@ dependencies {
 
     implementation(project(":model"))
     implementation(project(":service"))
-
-    testImplementation(kotlin("test"))
 }
 
 kotlin {

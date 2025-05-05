@@ -6,7 +6,7 @@ import org.bson.types.ObjectId
 import java.time.OffsetDateTime
 
 @RegisterForReflection
-internal data class ApartmentEntity(
+public data class ApartmentEntity(
     val _id: ObjectId, // custom id for MongoDB
     val externalId: String, // is the same as Apartment.id
     val fingerprint: String,
@@ -29,7 +29,7 @@ internal data class ApartmentEntity(
 )
 
 @RegisterForReflection
-internal data class ApartmentDuplicateEntity(
+public data class ApartmentDuplicateEntity(
     val url: String,
     val price: Double,
     val pricePerM2: Double?,
@@ -38,7 +38,7 @@ internal data class ApartmentDuplicateEntity(
 )
 
 @RegisterForReflection
-internal data class LocalityEntity(
+public data class LocalityEntity(
     val city: String,
     val district: String?,
     val street: String?,

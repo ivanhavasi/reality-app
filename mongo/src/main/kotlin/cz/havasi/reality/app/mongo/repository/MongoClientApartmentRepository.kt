@@ -29,7 +29,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset.UTC
 
 @ApplicationScoped
-internal class MongoClientApartmentRepository(
+public class MongoClientApartmentRepository(
     private val reactiveMongoClient: ReactiveMongoClient,
 ) : ApartmentRepository {
     private val mongoCollection =
