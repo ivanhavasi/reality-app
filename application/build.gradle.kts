@@ -6,11 +6,6 @@ plugins {
 group = "cz.havasi.reality.app"
 version = "1.0.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
-
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
@@ -35,8 +30,4 @@ dependencies {
     testImplementation("io.quarkus:quarkus-mongodb-client")
     testImplementation("org.mongodb:bson-kotlin:5.2.1")
     testImplementation("io.smallrye.reactive:mutiny-kotlin:1.6.0")
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

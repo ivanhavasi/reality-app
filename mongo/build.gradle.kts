@@ -6,11 +6,6 @@ plugins {
 group = "cz.havasi.reality.app"
 version = "1.0.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
-
 val quarkusPlatformGroupId: String by project
 val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
@@ -28,13 +23,4 @@ dependencies {
 
     implementation(project(":model"))
     implementation(project(":service"))
-}
-
-kotlin {
-    explicitApi() // Enable explicit API mode
-    jvmToolchain(21)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

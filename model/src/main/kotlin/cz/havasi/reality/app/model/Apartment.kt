@@ -10,22 +10,22 @@ public data class Apartment(
     val price: Double,
     val pricePerM2: Double?,
     val sizeInM2: Double,
-    val currency: cz.havasi.reality.app.model.CurrencyType,
-    val locality: cz.havasi.reality.app.model.Locality,
-    val mainCategory: cz.havasi.reality.app.model.BuildingType,
+    val currency: CurrencyType,
+    val locality: Locality,
+    val mainCategory: BuildingType,
     val subCategory: String?,
-    val transactionType: cz.havasi.reality.app.model.TransactionType,
-    val images: List<String> = emptyList<String>(),
+    val transactionType: TransactionType,
+    val images: List<String> = emptyList(),
     val description: String? = null,
     val provider: ProviderType = ProviderType.UNKNOWN,
-    val duplicates: List<cz.havasi.reality.app.model.ApartmentDuplicate> = listOf(),
+    val duplicates: List<ApartmentDuplicate> = listOf(),
 )
 
 public data class ApartmentDuplicate(
     val url: String,
     val price: Double,
     val pricePerM2: Double?,
-    val images: List<String> = emptyList<String>(),
+    val images: List<String> = emptyList(),
     val provider: ProviderType = ProviderType.UNKNOWN,
 )
 

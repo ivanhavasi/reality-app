@@ -6,7 +6,20 @@ plugins {
 group = "cz.havasi"
 version = "1.0.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-    mavenLocal()
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    kotlin {
+        explicitApi()
+        jvmToolchain(21)
+    }
+
+    tasks.test {
+        useJUnitPlatform()
+    }
 }

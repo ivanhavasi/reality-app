@@ -1,3 +1,3 @@
 package cz.havasi.reality.app
 
-class RealityAppMain
+internal class RealityAppMain
