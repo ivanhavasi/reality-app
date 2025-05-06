@@ -55,7 +55,7 @@ jobs:
       - name: Build, Tag, and Push Docker Image
         run: |
           # Build Docker image and tag it with commit hash
-          docker build -f src/main/docker/Dockerfile.native -t reality-app:${{ env.commit_hash }} .
+          docker build -f application/src/main/docker/Dockerfile.native -t reality-app:${{ env.commit_hash }} application/
           docker tag reality-app:${{ env.commit_hash }} ${{ secrets.ECR_REPOSITORY }}:${{ env.commit_hash }}
           docker push ${{ secrets.ECR_REPOSITORY }}:${{ env.commit_hash }}
 
