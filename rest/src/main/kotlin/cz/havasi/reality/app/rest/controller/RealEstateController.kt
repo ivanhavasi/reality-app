@@ -32,8 +32,10 @@ internal open class RealEstateController(
         @DefaultValue("0") @QueryParam("offset") offset: Int,
         @DefaultValue("20") @QueryParam("limit") limit: Int,
         @DefaultValue("DESC") @QueryParam("sortDirection") sortDirection: String,
+        @QueryParam("search") searchString: String? = null,
     ): RestResponse<List<Apartment>> =
         realEstateService.getApartments(
+            searchString,
             Paging(
                 offset = offset.coerceAtLeast(0),
                 limit = limit.coerceIn(10, 20),

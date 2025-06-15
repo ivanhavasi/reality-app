@@ -30,9 +30,9 @@ public class RealEstateService(
         }
     }
 
-    public suspend fun getApartments(paging: Paging): List<Apartment> =
+    public suspend fun getApartments(searchString: String?, paging: Paging): List<Apartment> =
         apartmentRepository
-            .findAll(paging)
+            .findAll(searchString, paging)
 
     private suspend fun fetchAndSaveApartmentsForProvider(provider: RealEstatesProvider) {
         val numberOfApartments = 22

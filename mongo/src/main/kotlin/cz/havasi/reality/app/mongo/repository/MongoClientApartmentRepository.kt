@@ -27,6 +27,7 @@ import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import java.time.OffsetDateTime
 import java.time.ZoneOffset.UTC
+import java.util.regex.Pattern
 
 @ApplicationScoped
 public class MongoClientApartmentRepository(
@@ -94,9 +95,9 @@ public class MongoClientApartmentRepository(
         }
     }
 
-    override suspend fun findAll(paging: Paging): List<Apartment> =
+    override suspend fun findAll(searchString: String?, paging: Paging): List<Apartment> =
         mongoCollection
-            .find(paging.toFindOptions())
+            .find(createFindQuery(searchString), paging.toFindOptions())
             .asFlow()
             .map { it.toModel() }
             .toList()
@@ -123,6 +124,21 @@ public class MongoClientApartmentRepository(
             .asFlow()
             .map { it.toModel() }
             .toList()
+    }
+
+    private fun createFindQuery(searchString: String?): Bson {
+        if (searchString.isNullOrBlank()) {
+            return Filters.empty()
+        }
+        val escaped = Regex.escape(searchString)
+        val regexPattern = Pattern.compile(escaped, Pattern.CASE_INSENSITIVE)
+
+        return Filters.or(
+            Filters.regex("externalId", regexPattern),
+            Filters.regex("fingerprint", regexPattern),
+            Filters.regex("url", regexPattern),
+            Filters.regex("name", regexPattern),
+        )
     }
 
     private fun ApartmentEntity.toModel() =
