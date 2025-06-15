@@ -29,11 +29,11 @@ internal class RestDiscordClient(
             .handleResponse()
 
     private fun RestResponse<String>.handleResponse(): String {
-        if (status != 200) {
+        if (status >= 400) {
             Log.error("Could not send apartment to discord. Status: $status, $entity")
             throw IllegalStateException("Could not send apartment to discord. Status: $status, $entity")
         }
-        return entity
+        return entity ?: "Empty response from Discord webhook"
     }
 
     private fun Apartment.toBody(): DiscordWebhookBody =
