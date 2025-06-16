@@ -1,5 +1,8 @@
 package cz.havasi.reality.app.model
 
+import io.quarkus.runtime.annotations.RegisterForReflection
+
+@RegisterForReflection
 public data class NotificationFilter(
     val buildingType: BuildingType,
     val transactionType: TransactionType,
@@ -8,6 +11,7 @@ public data class NotificationFilter(
     val subTypes: List<String>?,
 )
 
+@RegisterForReflection
 public data class FilterRange<T : Number>(
     val from: T?,
     val to: T?,

@@ -2,8 +2,10 @@ package cz.havasi.reality.app.model
 
 import cz.havasi.reality.app.model.type.NotificationType
 import cz.havasi.reality.app.model.type.ProviderType
+import io.quarkus.runtime.annotations.RegisterForReflection
 import java.time.OffsetDateTime
 
+@RegisterForReflection
 public data class SentNotification(
     val notificationId: String,
     val userId: String,
@@ -12,6 +14,7 @@ public data class SentNotification(
     val sentAt: OffsetDateTime,
 )
 
+@RegisterForReflection
 public data class SentNotificationRealEstate(
     val id: String,
     val name: String,

@@ -1,8 +1,10 @@
 package cz.havasi.reality.app.model
 
 import cz.havasi.reality.app.model.type.NotificationType
+import io.quarkus.runtime.annotations.RegisterForReflection
 import java.time.OffsetDateTime
 
+@RegisterForReflection
 public sealed interface Notification {
     public val id: String
     public val name: String
@@ -14,6 +16,7 @@ public sealed interface Notification {
     public val type: NotificationType
 }
 
+@RegisterForReflection
 public data class EmailNotification(
     override val id: String,
     override val name: String,
@@ -27,6 +30,7 @@ public data class EmailNotification(
     override val type: NotificationType = NotificationType.EMAIL
 }
 
+@RegisterForReflection
 public data class WebhookNotification(
     override val id: String,
     override val name: String,
@@ -40,6 +44,7 @@ public data class WebhookNotification(
     override val type: NotificationType = NotificationType.WEBHOOK
 }
 
+@RegisterForReflection
 public data class DiscordWebhookNotification(
     override val id: String,
     override val name: String,
