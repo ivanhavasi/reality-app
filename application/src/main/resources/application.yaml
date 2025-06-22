@@ -2,6 +2,10 @@ quarkus:
   http:
     cors:
       ~: true
+      origins: "https://reality.havasi.me"
+      methods: "GET,POST,PUT,DELETE,OPTIONS"
+      headers: "*"
+      expose-headers: "Content-Length,Content-Type"
       access-control-allow-credentials: true
   oidc:
     application-type: service
