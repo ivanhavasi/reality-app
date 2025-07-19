@@ -30,9 +30,9 @@ public class RealEstateService(
         }
     }
 
-    public suspend fun getApartments(searchString: String?, paging: Paging): List<Apartment> =
+    public suspend fun getApartments(searchString: String?, transactionType: TransactionType, paging: Paging): List<Apartment> =
         apartmentRepository
-            .findAll(searchString, paging)
+            .findAll(searchString, transactionType, paging)
 
     private suspend fun fetchAndSaveApartmentsForProvider(
         provider: RealEstatesProvider,

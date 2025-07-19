@@ -1,7 +1,16 @@
 package cz.havasi.reality.app.mongo.repository
 
-import com.mongodb.client.model.*
-import cz.havasi.reality.app.model.*
+import com.mongodb.client.model.BulkWriteOptions
+import com.mongodb.client.model.Filters
+import com.mongodb.client.model.InsertManyOptions
+import com.mongodb.client.model.UpdateOneModel
+import com.mongodb.client.model.Updates
+import cz.havasi.reality.app.model.Apartment
+import cz.havasi.reality.app.model.ApartmentDuplicate
+import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.CurrencyType
+import cz.havasi.reality.app.model.Locality
+import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.reality.app.model.type.ProviderType
 import cz.havasi.reality.app.model.util.Paging
@@ -95,9 +104,13 @@ public class MongoClientApartmentRepository(
         }
     }
 
-    override suspend fun findAll(searchString: String?, paging: Paging): List<Apartment> =
+    override suspend fun findAll(
+        searchString: String?,
+        transactionType: TransactionType,
+        paging: Paging,
+    ): List<Apartment> =
         mongoCollection
-            .find(createFindQuery(searchString), paging.toFindOptions())
+            .find(createFindQuery(searchString, transactionType), paging.toFindOptions())
             .asFlow()
             .map { it.toModel() }
             .toList()
@@ -126,18 +139,21 @@ public class MongoClientApartmentRepository(
             .toList()
     }
 
-    private fun createFindQuery(searchString: String?): Bson {
+    private fun createFindQuery(searchString: String?, transactionType: TransactionType): Bson {
         if (searchString.isNullOrBlank()) {
             return Filters.empty()
         }
         val escaped = Regex.escape(searchString)
         val regexPattern = Pattern.compile(escaped, Pattern.CASE_INSENSITIVE)
 
-        return Filters.or(
-            Filters.regex("externalId", regexPattern),
-            Filters.regex("fingerprint", regexPattern),
-            Filters.regex("url", regexPattern),
-            Filters.regex("name", regexPattern),
+        return Filters.and(
+            Filters.eq("transactionType", transactionType.name),
+            Filters.or(
+                Filters.regex("externalId", regexPattern),
+                Filters.regex("fingerprint", regexPattern),
+                Filters.regex("url", regexPattern),
+                Filters.regex("name", regexPattern),
+            ),
         )
     }
 
