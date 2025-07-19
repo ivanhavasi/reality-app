@@ -141,7 +141,7 @@ public class MongoClientApartmentRepository(
 
     private fun createFindQuery(searchString: String?, transactionType: TransactionType): Bson {
         if (searchString.isNullOrBlank()) {
-            return Filters.empty()
+            return Filters.eq("transactionType", transactionType.name)
         }
         val escaped = Regex.escape(searchString)
         val regexPattern = Pattern.compile(escaped, Pattern.CASE_INSENSITIVE)
