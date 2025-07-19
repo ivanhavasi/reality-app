@@ -1,6 +1,8 @@
 package cz.havasi.reality.app.rest.controller
 
 import cz.havasi.reality.app.model.Apartment
+import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.type.UserRole.Companion.ADMIN_ROLE
 import cz.havasi.reality.app.model.type.UserRole.Companion.USER_ROLE
 import cz.havasi.reality.app.model.util.Paging
@@ -9,7 +11,12 @@ import cz.havasi.reality.app.rest.controller.util.wrapToNoContent
 import cz.havasi.reality.app.rest.controller.util.wrapToOk
 import cz.havasi.reality.app.service.RealEstateService
 import jakarta.annotation.security.RolesAllowed
-import jakarta.ws.rs.*
+import jakarta.ws.rs.DefaultValue
+import jakarta.ws.rs.GET
+import jakarta.ws.rs.POST
+import jakarta.ws.rs.Path
+import jakarta.ws.rs.Produces
+import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
 import org.jboss.resteasy.reactive.RestResponse
 
@@ -23,7 +30,7 @@ internal open class RealEstateController(
     @Path("/process")
     open suspend fun processNewRealEstates(): RestResponse<Nothing> =
         realEstateService
-            .fetchAndSaveApartmentsForSale()
+            .fetchAndSaveRealEstate(BuildingType.APARTMENT, TransactionType.SALE)
             .wrapToNoContent()
 
     @GET

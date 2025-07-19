@@ -24,9 +24,9 @@ public class RealEstateService(
     private val userNotificationService: UserNotificationService,
     @All private val realEstateProviders: MutableList<RealEstatesProvider>,
 ) {
-    public suspend fun fetchAndSaveApartmentsForSale(): Unit {
+    public suspend fun fetchAndSaveRealEstate(buildingType: BuildingType, transactionType: TransactionType) {
         realEstateProviders.forEachAsync(message = "Fetching and saving apartments") {
-            fetchAndSaveApartmentsForProvider(it)
+            fetchAndSaveApartmentsForProvider(it, buildingType, transactionType)
         }
     }
 
@@ -34,13 +34,17 @@ public class RealEstateService(
         apartmentRepository
             .findAll(searchString, paging)
 
-    private suspend fun fetchAndSaveApartmentsForProvider(provider: RealEstatesProvider) {
+    private suspend fun fetchAndSaveApartmentsForProvider(
+        provider: RealEstatesProvider,
+        buildingType: BuildingType,
+        transactionType: TransactionType,
+    ) {
         val numberOfApartments = 22
         val maxCalls = 5
 
         for (i in 0 until maxCalls) {
             val apartments = provider
-                .getApartments(i * numberOfApartments, numberOfApartments)
+                .getApartments(i * numberOfApartments, numberOfApartments, buildingType, transactionType)
                 .filterApartments()
                 .saveApartments()
                 .sendNotifications()
@@ -53,11 +57,16 @@ public class RealEstateService(
         }
     }
 
-    private suspend fun RealEstatesProvider.getApartments(offset: Int, limit: Int): List<Apartment> =
+    private suspend fun RealEstatesProvider.getApartments(
+        offset: Int,
+        limit: Int,
+        buildingType: BuildingType,
+        transactionType: TransactionType,
+    ): List<Apartment> =
         getRealEstates(
             GetRealEstatesCommand(
-                type = BuildingType.APARTMENT,
-                transaction = TransactionType.SALE,
+                type = buildingType,
+                transaction = transactionType,
                 offset = offset,
                 limit = limit,
             ),

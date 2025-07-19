@@ -1,6 +1,10 @@
 package cz.havasi.reality.app.sreality
 
-import cz.havasi.reality.app.model.*
+import cz.havasi.reality.app.model.Apartment
+import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.CurrencyType
+import cz.havasi.reality.app.model.Locality
+import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.GetRealEstatesCommand
 import cz.havasi.reality.app.model.type.ProviderType
 import cz.havasi.reality.app.service.provider.RealEstatesProvider
@@ -34,8 +38,8 @@ internal class SrealityRealEstatesProvider(
 
     private suspend fun GetRealEstatesCommand.callClient(): List<Apartment> =
         srealityApi.searchEstates(
-            categoryType = 1,
-            categoryMain = 1,
+            categoryType = resolveCategoryType(),
+            categoryMain = resolveCategoryMain(),
             localityCountryId = 112,
             localityRegionId = 10,
             limit = limit,
@@ -49,10 +53,21 @@ internal class SrealityRealEstatesProvider(
             .also { Log.info("Sreality estates found size: ${it.size}") }
             .map { it.toApartment() }
 
-    private fun RestResponse<SrealitySearchResult>.handleResult(): SrealitySearchResult {
-        if (status != 200) {
-            throw IllegalStateException("Sreality API returned status $status")
+    private fun GetRealEstatesCommand.resolveCategoryType(): Int =
+        when (transaction) {
+            TransactionType.SALE -> 1
+            TransactionType.RENT -> 2
         }
+
+    private fun GetRealEstatesCommand.resolveCategoryMain(): Int =
+        when (type) {
+            BuildingType.APARTMENT -> 1
+            BuildingType.HOUSE -> 2
+            BuildingType.LAND -> 3
+        }
+
+    private fun RestResponse<SrealitySearchResult>.handleResult(): SrealitySearchResult {
+        check(status == 200) { "Sreality API returned status $status" }
         return entity ?: error("Sreality API returned empty body")
     }
 
