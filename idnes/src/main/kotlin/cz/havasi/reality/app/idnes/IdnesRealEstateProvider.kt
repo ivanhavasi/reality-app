@@ -1,7 +1,11 @@
 package cz.havasi.reality.app.idnes
 
 import cz.havasi.reality.app.idnes.api.IdnesApi
-import cz.havasi.reality.app.model.*
+import cz.havasi.reality.app.model.Apartment
+import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.CurrencyType
+import cz.havasi.reality.app.model.Locality
+import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.GetRealEstatesCommand
 import cz.havasi.reality.app.model.type.ProviderType
 import cz.havasi.reality.app.service.provider.RealEstatesProvider
@@ -84,7 +88,12 @@ internal class IdnesRealEstateProvider(
 
             Apartment(
                 id = id,
-                fingerprint = constructFingerprint(getRealEstatesCommand.type, locality, subCategory ?: ""),
+                fingerprint = constructFingerprint(
+                    getRealEstatesCommand.type,
+                    locality,
+                    subCategory ?: "",
+                    getRealEstatesCommand.transaction,
+                ),
                 name = name,
                 url = url,
                 price = price,

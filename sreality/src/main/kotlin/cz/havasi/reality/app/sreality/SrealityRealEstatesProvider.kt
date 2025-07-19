@@ -51,7 +51,7 @@ internal class SrealityRealEstatesProvider(
             .handleResult()
             .results
             .also { Log.info("Sreality estates found size: ${it.size}") }
-            .map { it.toApartment() }
+            .map { it.toApartment(this) }
 
     private fun GetRealEstatesCommand.resolveCategoryType(): Int =
         when (transaction) {
@@ -71,10 +71,15 @@ internal class SrealityRealEstatesProvider(
         return entity ?: error("Sreality API returned empty body")
     }
 
-    private fun SrealityApartment.toApartment() =
+    private fun SrealityApartment.toApartment(command: GetRealEstatesCommand) =
         Apartment(
             id = hashId,
-            fingerprint = constructFingerprint(BuildingType.APARTMENT, locality.toLocality(), subCategory?.name ?: ""),
+            fingerprint = constructFingerprint(
+                BuildingType.APARTMENT,
+                locality.toLocality(),
+                subCategory?.name ?: "",
+                command.transaction,
+            ),
             name = name,
             url = prepareUrl(),
             price = price,

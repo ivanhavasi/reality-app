@@ -85,6 +85,7 @@ internal class BezrealitkyRealEstatesProvider(
                     buildingType = getRealEstatesCommand.type,
                     locality = locality,
                     subCategory = subCategory ?: "",
+                    transactionType = getRealEstatesCommand.transaction,
                 ),
                 name = name,
                 pricePerM2 = price / size,

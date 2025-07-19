@@ -30,7 +30,11 @@ public class RealEstateService(
         }
     }
 
-    public suspend fun getApartments(searchString: String?, transactionType: TransactionType, paging: Paging): List<Apartment> =
+    public suspend fun getApartments(
+        searchString: String?,
+        transactionType: TransactionType,
+        paging: Paging,
+    ): List<Apartment> =
         apartmentRepository
             .findAll(searchString, transactionType, paging)
 
@@ -101,6 +105,7 @@ public class RealEstateService(
 
     private fun areApartmentsDuplicates(apartment: Apartment, originalApartment: Apartment?): Boolean =
         originalApartment != null
+            && originalApartment.transactionType == apartment.transactionType
             && (
             apartment.id == originalApartment.id
                 || areDoublesEqualWithTolerance(
