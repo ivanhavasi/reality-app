@@ -16,6 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jboss.resteasy.reactive.RestResponse
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
 import kotlin.math.roundToInt
 
 @ApplicationScoped
@@ -63,8 +64,7 @@ internal class IdnesRealEstateProvider(
             val id = splitUrl.getOrNull(splitUrl.lastIndex - 1) ?: logMissingData("id")
             val name = titleElement?.text()?.firstCapitalOthersLowerCase() ?: logMissingData("name")
             val url = linkElement?.attr("href") ?: logMissingData("url")
-            val price = it.selectFirst(".c-products__price strong")?.text()?.replace("Kč", "")?.replace(" ", "")?.trim()
-                ?.toDoubleOrNull() ?: 0.0
+            val price = it.getPrice(getRealEstatesCommand.transaction)
             val localityText = it.selectFirst(".c-products__info")?.text() ?: logMissingData("locality")
             val localityParts = localityText.split(",").map { it.trim() }
             val city = "Praha" // todo currently supports prague only
@@ -108,6 +108,21 @@ internal class IdnesRealEstateProvider(
                 provider = ProviderType.IDNES,
             )
         }
+
+    private fun Element.getPrice(transactionType: TransactionType): Double {
+        val replaceString = when (transactionType) {
+            TransactionType.RENT -> "Kč/měsíc"
+            TransactionType.SALE -> "Kč"
+        }
+
+        return selectFirst(".c-products__price strong")
+            ?.text()
+            ?.replace(replaceString, "")
+            ?.replace(" ", "")
+            ?.trim()
+            ?.toDoubleOrNull()
+            ?: 0.0
+    }
 
     private fun logMissingData(data: String): String {
         Log.error("Missing $data while scraping iDnes reality")
