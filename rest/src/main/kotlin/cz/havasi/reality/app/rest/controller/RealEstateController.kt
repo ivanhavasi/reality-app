@@ -15,6 +15,7 @@ import jakarta.ws.rs.DefaultValue
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
+import jakarta.ws.rs.PathParam
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
@@ -52,6 +53,13 @@ internal open class RealEstateController(
             ),
         )
             .wrapToOk()
+
+    // NOT SECURED EP
+    @GET
+    @Path("/{id}")
+    open suspend fun getRealEstateById(
+        @PathParam("id") id: String,
+    ): RestResponse<Apartment> = realEstateService.getById(id).wrapToOk()
 
     private fun String.toTransactionType() = when (this) {
         "SALE" -> TransactionType.SALE

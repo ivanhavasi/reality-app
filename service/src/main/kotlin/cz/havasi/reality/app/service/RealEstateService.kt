@@ -34,9 +34,11 @@ public class RealEstateService(
         searchString: String?,
         transactionType: TransactionType,
         paging: Paging,
-    ): List<Apartment> =
-        apartmentRepository
-            .findAll(searchString, transactionType, paging)
+    ): List<Apartment> = apartmentRepository.findAll(searchString, transactionType, paging)
+
+    public suspend fun getById(id: String): Apartment =
+        apartmentRepository.findByIdOrFingerprint(id, "").firstOrNull()
+            ?: throw NoSuchElementException("Apartment with id $id not found")
 
     private suspend fun fetchAndSaveApartmentsForProvider(
         provider: RealEstatesProvider,
