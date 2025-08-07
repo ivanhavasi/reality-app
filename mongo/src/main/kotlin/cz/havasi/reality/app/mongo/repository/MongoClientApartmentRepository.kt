@@ -78,6 +78,8 @@ public class MongoClientApartmentRepository(
             UpdateOneModel<ApartmentEntity>(
                 Filters.eq("externalId", it.apartment.id),
                 Updates.combine(
+                    Updates.set("locality.latitude", it.apartment.locality.latitude),
+                    Updates.set("locality.longitude", it.apartment.locality.longitude),
                     Updates.push("duplicates", it.duplicate.toEntity()),
                     Updates.set("updatedAt", OffsetDateTime.now(UTC)),
                 ),

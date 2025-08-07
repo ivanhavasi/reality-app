@@ -87,7 +87,8 @@ public class RealEstateService(
             val originalApartment = findOriginalApartment(it)
             if (areApartmentsDuplicates(it, originalApartment)) {
                 if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check- areApartmentsDuplicates
-                    duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartment, it.toDuplicate()))
+                    val originalApartmentWithLocation = resolveLocationFromDuplicate(originalApartment, it)
+                    duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartmentWithLocation, it.toDuplicate()))
                 }
             } else {
                 newApartments.add(it)
@@ -96,6 +97,25 @@ public class RealEstateService(
 
         return ApartmentsAndDuplicates(newApartments, duplicates)
     }
+
+    private fun resolveLocationFromDuplicate(
+        originalApartment: Apartment,
+        duplicate: Apartment,
+    ): Apartment =
+        if (originalApartment.locality.latitude == null
+            && originalApartment.locality.longitude == null
+            && duplicate.locality.latitude != null
+            && duplicate.locality.longitude != null
+        ) {
+            originalApartment.copy(
+                locality = originalApartment.locality.copy(
+                    latitude = duplicate.locality.latitude,
+                    longitude = duplicate.locality.longitude,
+                ),
+            )
+        } else {
+            originalApartment
+        }
 
     private suspend fun findOriginalApartment(apartment: Apartment): Apartment? {
         val apartments = apartmentRepository.findByIdOrFingerprint(apartment.id, apartment.fingerprint)
