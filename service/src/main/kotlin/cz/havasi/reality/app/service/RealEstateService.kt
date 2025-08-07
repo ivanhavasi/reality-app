@@ -5,9 +5,9 @@ import cz.havasi.reality.app.model.ApartmentDuplicate
 import cz.havasi.reality.app.model.BuildingType
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.ApartmentsAndDuplicates
+import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.command.GetRealEstatesCommand
 import cz.havasi.reality.app.model.command.UpdateApartmentWithDuplicateCommand
-import cz.havasi.reality.app.model.util.Paging
 import cz.havasi.reality.app.service.provider.RealEstatesProvider
 import cz.havasi.reality.app.service.repository.ApartmentRepository
 import cz.havasi.reality.app.service.util.areDoublesEqualWithTolerance
@@ -30,11 +30,8 @@ public class RealEstateService(
         }
     }
 
-    public suspend fun getApartments(
-        searchString: String?,
-        transactionType: TransactionType,
-        paging: Paging,
-    ): List<Apartment> = apartmentRepository.findAll(searchString, transactionType, paging)
+    public suspend fun findRealEstates(command: FindRealEstatesCommand): List<Apartment> =
+        apartmentRepository.findAll(command)
 
     public suspend fun getById(id: String): Apartment =
         apartmentRepository.findByIdOrFingerprint(id, "").firstOrNull()

@@ -11,9 +11,9 @@ import cz.havasi.reality.app.model.BuildingType
 import cz.havasi.reality.app.model.CurrencyType
 import cz.havasi.reality.app.model.Locality
 import cz.havasi.reality.app.model.TransactionType
+import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.reality.app.model.type.ProviderType
-import cz.havasi.reality.app.model.util.Paging
 import cz.havasi.reality.app.mongo.DatabaseNames.APARTMENT_COLLECTION_NAME
 import cz.havasi.reality.app.mongo.DatabaseNames.DB_NAME
 import cz.havasi.reality.app.mongo.entity.ApartmentDuplicateEntity
@@ -106,13 +106,9 @@ public class MongoClientApartmentRepository(
         }
     }
 
-    override suspend fun findAll(
-        searchString: String?,
-        transactionType: TransactionType,
-        paging: Paging,
-    ): List<Apartment> =
+    override suspend fun findAll(command: FindRealEstatesCommand): List<Apartment> =
         mongoCollection
-            .find(createFindQuery(searchString, transactionType), paging.toFindOptions())
+            .find(createFindQuery(command), command.paging.toFindOptions())
             .asFlow()
             .map { it.toModel() }
             .toList()
@@ -141,15 +137,15 @@ public class MongoClientApartmentRepository(
             .toList()
     }
 
-    private fun createFindQuery(searchString: String?, transactionType: TransactionType): Bson {
-        if (searchString.isNullOrBlank()) {
-            return Filters.eq("transactionType", transactionType.name)
+    private fun createFindQuery(command: FindRealEstatesCommand): Bson {
+        if (command.searchString.isNullOrBlank()) {
+            return command.createBaseFilters()
         }
-        val escaped = Regex.escape(searchString)
+        val escaped = Regex.escape(command.searchString!!)
         val regexPattern = Pattern.compile(escaped, Pattern.CASE_INSENSITIVE)
 
         return Filters.and(
-            Filters.eq("transactionType", transactionType.name),
+            command.createBaseFilters(),
             Filters.or(
                 Filters.regex("externalId", regexPattern),
                 Filters.regex("fingerprint", regexPattern),
@@ -158,6 +154,16 @@ public class MongoClientApartmentRepository(
             ),
         )
     }
+
+    private fun FindRealEstatesCommand.createBaseFilters() =
+        Filters.and(
+            Filters.eq("transactionType", transactionType.name),
+            Filters.eq("mainCategory", buildingType.name),
+            Filters.gte("sizeInM2", sizeMin.toDouble()),
+            Filters.lte("sizeInM2", sizeMax.toDouble()),
+            Filters.gte("price", priceMin.toDouble()),
+            Filters.lte("price", priceMax.toDouble()),
+        )
 
     private fun ApartmentEntity.toModel() =
         Apartment(

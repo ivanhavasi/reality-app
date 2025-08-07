@@ -3,6 +3,7 @@ package cz.havasi.reality.app.rest.controller
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.BuildingType
 import cz.havasi.reality.app.model.TransactionType
+import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.type.UserRole.Companion.ADMIN_ROLE
 import cz.havasi.reality.app.model.type.UserRole.Companion.USER_ROLE
 import cz.havasi.reality.app.model.util.Paging
@@ -36,20 +37,32 @@ internal open class RealEstateController(
 
     @GET
     @RolesAllowed(USER_ROLE)
-    open suspend fun getRealEstates(
+    open suspend fun findRealEstates(
         @DefaultValue("0") @QueryParam("offset") offset: Int,
         @DefaultValue("20") @QueryParam("limit") limit: Int,
         @DefaultValue("DESC") @QueryParam("sortDirection") sortDirection: String,
         @DefaultValue("SALE") @QueryParam("transaction") transaction: String,
+        @DefaultValue("APARTMENT") @QueryParam("building") building: String,
+        @DefaultValue("0") @QueryParam("sizeMin") sizeMin: Int,
+        @DefaultValue("1000") @QueryParam("sizeMax") sizeMax: Int,
+        @DefaultValue("0") @QueryParam("priceMin") priceMin: Int,
+        @DefaultValue("1000000000") @QueryParam("priceMax") priceMax: Int,
         @QueryParam("search") searchString: String? = null,
     ): RestResponse<List<Apartment>> =
-        realEstateService.getApartments(
-            searchString,
-            transaction.toTransactionType(),
-            Paging(
-                offset = offset.coerceAtLeast(0),
-                limit = limit.coerceIn(10, 20),
-                sortDirection = sortDirection.toSortDirection(),
+        realEstateService.findRealEstates(
+            FindRealEstatesCommand(
+                searchString,
+                transaction.toTransactionType(),
+                building.toBuildingType(),
+                sizeMin,
+                sizeMax,
+                priceMin,
+                priceMax,
+                Paging(
+                    offset = offset.coerceAtLeast(0),
+                    limit = limit.coerceIn(10, 20),
+                    sortDirection = sortDirection.toSortDirection(),
+                ),
             ),
         )
             .wrapToOk()
@@ -65,6 +78,13 @@ internal open class RealEstateController(
         "SALE" -> TransactionType.SALE
         "RENT" -> TransactionType.RENT
         else -> TransactionType.SALE
+    }
+
+    private fun String.toBuildingType() = when (this) {
+        "APARTMENT" -> BuildingType.APARTMENT
+        "HOUSE" -> BuildingType.HOUSE
+        "LAND" -> BuildingType.LAND
+        else -> BuildingType.APARTMENT
     }
 
     private fun String.toSortDirection() = when (this) {
