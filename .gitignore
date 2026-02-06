@@ -41,3 +41,4 @@ nb-configuration.xml
 .certs/
 
 **/resources/application-local.yaml
+**/resources/application-dev.yaml
