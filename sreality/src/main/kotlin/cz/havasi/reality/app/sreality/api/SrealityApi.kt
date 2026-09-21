@@ -1,16 +1,21 @@
 package cz.havasi.reality.app.sreality.api
 
+import cz.havasi.reality.app.model.constant.BROWSER_ACCEPT_LANGUAGE
+import cz.havasi.reality.app.model.constant.CHROME_USER_AGENT
 import cz.havasi.reality.app.sreality.model.SrealitySearchResult
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.QueryParam
 import jakarta.ws.rs.core.MediaType
+import org.eclipse.microprofile.rest.client.annotation.ClientHeaderParam
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient
 import org.jboss.resteasy.reactive.RestResponse
 
 @Path("/api/v1")
 @RegisterRestClient(configKey = "sreality-api")
+@ClientHeaderParam(name = "User-Agent", value = [CHROME_USER_AGENT])
+@ClientHeaderParam(name = "Accept-Language", value = [BROWSER_ACCEPT_LANGUAGE])
 internal interface SrealityApi {
     @GET
     @Path("/estates/search")
