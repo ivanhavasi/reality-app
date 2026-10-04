@@ -1,0 +1,8 @@
+**/build/
+.gradle/
+.kotlin/
+.idea/
+.git/
+**/.DS_Store
+**/application-dev.yaml
+**/application-local.yaml

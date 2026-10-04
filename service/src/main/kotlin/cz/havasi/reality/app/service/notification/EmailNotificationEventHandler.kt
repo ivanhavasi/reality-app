@@ -20,6 +20,10 @@ internal class EmailNotificationEventHandler(
 ) : NotificationEventHandler<EmailNotification> {
 
     override fun handleNotifications(@Observes event: HandleNotificationsEvent<EmailNotification>) {
+        if (!emailClient.enabled) {
+            Log.debug("Email client disabled, skipping ${event.notifications.size} email notifications for apartment ${event.apartment.id}")
+            return
+        }
         Log.debug("Handling ${event.notifications.size} email notifications for apartment ${event.apartment.id}")
         CoroutineScope(Dispatchers.IO).launch {
             event.sendEmails()

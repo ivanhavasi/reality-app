@@ -62,7 +62,7 @@ quarkus:
 reality:
   mailjet:
     auth:
-      username: ${MAILJET_USERNAME}
-      password: ${MAILJET_PASSWORD}
+      username: ${MAILJET_USERNAME:}
+      password: ${MAILJET_PASSWORD:}
   scheduler:
     cron: "0 */30 6-23 * * ?"

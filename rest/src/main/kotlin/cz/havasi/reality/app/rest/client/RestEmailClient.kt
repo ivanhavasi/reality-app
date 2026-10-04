@@ -11,14 +11,29 @@ import cz.havasi.reality.app.rest.client.model.MailjetEmailsWrapper
 import cz.havasi.reality.app.service.util.firstCapitalOthersLowerCase
 import cz.havasi.reality.app.rest.util.formatToNumberWithSpaces
 import cz.havasi.reality.app.service.client.EmailClient
+import io.quarkus.logging.Log
+import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.event.Observes
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
+import java.util.Optional
 import org.jboss.resteasy.reactive.RestResponse
 
 @ApplicationScoped
 internal class RestEmailClient(
     @RestClient private val mailjetApi: MailjetApi, // they have limits on max number of messages https://dev.mailjet.com/email/reference/send-emails#v3_1_post_send
+    @ConfigProperty(name = "reality.mailjet.auth.username") username: Optional<String>,
+    @ConfigProperty(name = "reality.mailjet.auth.password") password: Optional<String>,
 ) : EmailClient {
+    override val enabled: Boolean = username.isPresent && password.isPresent
+
+    fun onStart(@Observes event: StartupEvent) {
+        if (!enabled) {
+            Log.warn("Mailjet credentials (MAILJET_USERNAME, MAILJET_PASSWORD) are not set, email notifications are disabled")
+        }
+    }
+
     override suspend fun sendEmail(command: SendEmailCommand): Unit {
         val emails = command.notifications.mapToEmail(command.apartment)
         mailjetApi
