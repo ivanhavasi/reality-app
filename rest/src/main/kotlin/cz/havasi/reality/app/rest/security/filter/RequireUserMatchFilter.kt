@@ -26,7 +26,7 @@ public class RequireUserMatchFilter(
         val annotation = resourceInfo.resourceMethod.getAnnotation(RequireUserMatch::class.java)
             ?: return // skip if the annotation is not present
 
-        if (identity.hasRole(UserRole.USER_ROLE)) {
+        if (identity.hasRole(UserRole.ADMIN_ROLE)) {
             return // skip if the user has admin role
         }
         val expectedUserId = identity.getAttribute<String>(annotation.value)

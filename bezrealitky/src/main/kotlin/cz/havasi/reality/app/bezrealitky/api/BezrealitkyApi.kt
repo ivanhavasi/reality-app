@@ -17,6 +17,7 @@ internal interface BezrealitkyApi {
     suspend fun searchEstates(
         @QueryParam("offerType") offerType: String,
         @QueryParam("estateType") estateType: String,
+        @QueryParam("landType") landType: String?,
         @QueryParam("osm_value") osmValue: String,
         @QueryParam("regionOsmIds") regionOsmIds: String,
         @QueryParam("currency") currency: String,

@@ -9,7 +9,10 @@ import cz.havasi.reality.app.rest.client.model.MailjetEmail
 import cz.havasi.reality.app.rest.client.model.MailjetEmailWrapper
 import cz.havasi.reality.app.rest.client.model.MailjetEmailsWrapper
 import cz.havasi.reality.app.service.util.firstCapitalOthersLowerCase
+import cz.havasi.reality.app.rest.util.buildingTypeLabel
 import cz.havasi.reality.app.rest.util.formatToNumberWithSpaces
+import cz.havasi.reality.app.rest.util.toDisplayString
+import cz.havasi.reality.app.rest.util.typeLabel
 import cz.havasi.reality.app.service.client.EmailClient
 import io.quarkus.logging.Log
 import io.quarkus.runtime.StartupEvent
@@ -62,22 +65,22 @@ internal class RestEmailClient(
         listOf(EmailAddress(email = email, name = email))
 
     private fun Apartment.toSubject() =
-        "${mainCategory.name.firstCapitalOthersLowerCase()} for ${transactionType.name.lowercase()} in ${locality.city}, ${locality.street} for ${price.formatToNumberWithSpaces()} CZK"
+        "${typeLabel()} ${sizeInM2.formatToNumberWithSpaces()} m² for ${transactionType.name.lowercase()} in ${locality.toDisplayString()} for ${price.formatToNumberWithSpaces()} $currency"
 
     private fun Apartment.toTextPart() =
         """
-            Apartment Listing
+            ${buildingTypeLabel()} Listing
 
             Name: $name
             Price: ${price.formatToNumberWithSpaces()} $currency
             Size: ${sizeInM2.formatToNumberWithSpaces()} m²
             Price per m²: ${pricePerM2?.formatToNumberWithSpaces() ?: "Unknown"} $currency
-            Location: $locality.street, $locality.city, $locality.district
-            Type: $mainCategory - $subCategory
+            Location: ${locality.toDisplayString()}
+            Type: ${typeLabel()}
             For ${transactionType.name.lowercase()}
             
             Description:
-            $description
+            ${description.orEmpty()}
             
             View more details: $url
         """.trimMargin()
@@ -89,7 +92,7 @@ internal class RestEmailClient(
         <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Apartment Details</title>
+        <title>${buildingTypeLabel()} Details</title>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -145,22 +148,22 @@ internal class RestEmailClient(
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>Apartment Listing</h1>
+                    <h1>${buildingTypeLabel()} Listing</h1>
                 </div>
                 <div class="content">
                     <a href="$url">
-                        <img src="${images.getMainImage()}" alt="Apartment Image" class="apartment-image">
+                        <img src="${images.getMainImage()}" alt="${buildingTypeLabel()} Image" class="apartment-image">
                     </a>
                     <h2>$name</h2>
                     <div class="details">
                         <p><strong>Price:</strong> ${price.formatToNumberWithSpaces()} $currency</p>
-                        <p><strong>Size:</strong> ${sizeInM2.toInt()} m²</p>
+                        <p><strong>Size:</strong> ${sizeInM2.formatToNumberWithSpaces()} m²</p>
                         <p><strong>Price per m²:</strong> ${pricePerM2?.formatToNumberWithSpaces() ?: "Unknown"} $currency</p>
-                        <p><strong>Location:</strong> ${locality.street}, ${locality.city}, ${locality.district}</p>
-                        <p><strong>Type:</strong> ${mainCategory.name.firstCapitalOthersLowerCase()} - $subCategory</p>
+                        <p><strong>Location:</strong> ${locality.toDisplayString()}</p>
+                        <p><strong>Type:</strong> ${typeLabel()}</p>
                         <p><strong>For ${transactionType.name.firstCapitalOthersLowerCase()}</strong></p>
                     </div>
-                    <p>$description</p>
+                    <p>${description.orEmpty()}</p>
                     <a href="$url" class="cta-button">View More Details</a>
                 </div>
                 <div class="footer">

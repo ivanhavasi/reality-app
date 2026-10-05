@@ -98,7 +98,7 @@ internal open class UserController(
         @PathParam("notificationId") notificationId: String,
     ): RestResponse<Nothing> =
         userNotificationService
-            .removeUserNotification(notificationId)
+            .removeUserNotification(userId, notificationId)
             .takeIf { it }
             ?.wrapToNoContent()
             ?: throw ServerErrorException("Notification was not removed.", 500)
@@ -111,7 +111,7 @@ internal open class UserController(
         @PathParam("notificationId") notificationId: String,
     ): RestResponse<Nothing> =
         userNotificationService
-            .enableUserNotification(notificationId)
+            .enableUserNotification(userId, notificationId)
             .takeIf { it }
             ?.wrapToNoContent()
             ?: throw ServerErrorException("Notification was not enabled.", 500)
@@ -124,7 +124,7 @@ internal open class UserController(
         @PathParam("notificationId") notificationId: String,
     ): RestResponse<Nothing> =
         userNotificationService
-            .disableUserNotification(notificationId)
+            .disableUserNotification(userId, notificationId)
             .takeIf { it }
             ?.wrapToNoContent()
             ?: throw ServerErrorException("Notification was not disabled.", 500)

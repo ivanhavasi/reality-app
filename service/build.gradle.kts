@@ -19,4 +19,5 @@ dependencies {
 
     api(project(":model"))
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
 }

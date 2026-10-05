@@ -10,6 +10,8 @@ import cz.havasi.reality.app.rest.client.model.DiscordUrl
 import cz.havasi.reality.app.rest.client.model.DiscordWebhookBody
 import cz.havasi.reality.app.service.util.firstCapitalOthersLowerCase
 import cz.havasi.reality.app.rest.util.formatToNumberWithSpaces
+import cz.havasi.reality.app.rest.util.toDisplayString
+import cz.havasi.reality.app.rest.util.typeLabel
 import cz.havasi.reality.app.service.client.DiscordClient
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
@@ -70,7 +72,7 @@ internal class RestDiscordClient(
         ),
         DiscordField(
             name = "Size",
-            value = sizeInM2.toInt().toString(),
+            value = "${sizeInM2.formatToNumberWithSpaces()} m²",
             inline = true,
         ),
         DiscordField(
@@ -80,12 +82,12 @@ internal class RestDiscordClient(
         ),
         DiscordField(
             name = "Location",
-            value = "${locality.street}, ${locality.city}, ${locality.district}",
+            value = locality.toDisplayString(),
             inline = false,
         ),
         DiscordField(
             name = "Type",
-            value = "${mainCategory.name} - $subCategory",
+            value = typeLabel(),
             inline = true,
         ),
         DiscordField(
@@ -115,7 +117,8 @@ internal class RestDiscordClient(
     }
 
     private fun Apartment.calculateDiscountPrice(): Double {
-        val minPrice = duplicates.minByOrNull { it.price }
+        // a price-on-request duplicate is stored with price 0, which is no discount
+        val minPrice = duplicates.filter { it.price > 0 }.minByOrNull { it.price }
         return if (minPrice != null && minPrice.price < price) {
             minPrice.price
         } else {

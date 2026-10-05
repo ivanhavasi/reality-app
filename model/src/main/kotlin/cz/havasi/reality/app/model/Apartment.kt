@@ -30,6 +30,7 @@ public data class ApartmentDuplicate(
     val pricePerM2: Double?,
     val images: List<String> = emptyList(),
     val provider: ProviderType = ProviderType.UNKNOWN,
+    val id: String? = null,
 )
 
 @RegisterForReflection

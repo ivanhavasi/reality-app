@@ -13,4 +13,5 @@ public data class FindRealEstatesCommand(
     val priceMin: Int,
     val priceMax: Int,
     val paging: Paging,
+    val subCategories: List<String> = emptyList(),
 )

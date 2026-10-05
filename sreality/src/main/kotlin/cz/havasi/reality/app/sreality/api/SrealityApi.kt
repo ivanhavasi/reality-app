@@ -23,6 +23,7 @@ internal interface SrealityApi {
     suspend fun searchEstates(
         @QueryParam("category_type_cb") categoryType: Int,
         @QueryParam("category_main_cb") categoryMain: Int,
+        @QueryParam("category_sub_cb") categorySub: String?,
         @QueryParam("locality_country_id") localityCountryId: Int,
         @QueryParam("locality_region_id") localityRegionId: Int,
         @QueryParam("limit") limit: Int,

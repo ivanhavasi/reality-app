@@ -66,3 +66,5 @@ reality:
       password: ${MAILJET_PASSWORD:}
   scheduler:
     cron: "0 */30 6-23 * * ?"
+    # must stay quoted: a bare `off` is read as boolean false and startup fails; "off"/"disabled" are the only disable values
+    land-cron: "${LAND_SCHEDULER_CRON:off}"

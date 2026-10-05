@@ -12,11 +12,11 @@ import cz.havasi.reality.app.service.provider.RealEstatesProvider
 import cz.havasi.reality.app.service.util.constructFingerprint
 import cz.havasi.reality.app.service.util.firstCapitalOthersLowerCase
 import io.quarkus.logging.Log
+import jakarta.ws.rs.WebApplicationException
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jboss.resteasy.reactive.RestResponse
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
 import kotlin.math.roundToInt
 
 @ApplicationScoped
@@ -27,26 +27,47 @@ internal class IdnesRealEstateProvider(
         with(getRealEstatesCommand) {
             try {
                 callClient()
+            } catch (e: WebApplicationException) {
+                // past the last page iDNES answers 404, which the client throws before handleResponse
+                if (e.response.status == 404) {
+                    Log.debug("iDnes page ${calculatePage()} not found, end of results")
+                } else {
+                    Log.error("Error while fetching iDnes data, page ${calculatePage()}", e)
+                }
+                emptyList()
             } catch (e: Exception) {
                 Log.error("Error while fetching iDnes data, page ${calculatePage()}", e)
                 emptyList()
             }
         }
 
-    private suspend fun GetRealEstatesCommand.callClient(): List<Apartment> =
-    // idnes does not support pagination
-    // you can only do other pages
-        // always returns 21 results
-        idnesApi.searchEstatesForPageZero(
-            transactionType = getTransactionType(),
-            buildingType = getBuildingType(),
-            location = getLocation(),
-            page = calculatePage(),
-        )
-            .handleResponse()
-            .parseDataFromResponse(this)
+    private suspend fun GetRealEstatesCommand.callClient(): List<Apartment> {
+        val response = if (type == BuildingType.LAND) {
+            val subType = landSubCategory?.idnesSlug ?: return emptyList()
+            idnesApi.searchEstatesWithSubType(
+                transactionType = getTransactionType(),
+                buildingType = getBuildingType(),
+                subType = subType,
+                location = getLocation(),
+                page = calculatePage(),
+            )
+        } else {
+            idnesApi.searchEstatesForPageZero(
+                transactionType = getTransactionType(),
+                buildingType = getBuildingType(),
+                location = getLocation(),
+                page = calculatePage(),
+            )
+        }
+        return response.handleResponse()?.parseDataFromResponse(this) ?: emptyList()
+    }
 
-    private fun RestResponse<String>.handleResponse(): String {
+    private fun RestResponse<String>.handleResponse(): String? {
+        // pages just past the end redirect to the last page; redirects aren't followed
+        if (status in 300..399) {
+            Log.debug("iDnes redirected with status $status, end of results")
+            return null
+        }
         if (status != 200) {
             Log.error("Error while fetching iDnes data, status code: $status, $entity")
             throw RuntimeException("Error while fetching iDnes data, status code: $status, $entity")
@@ -56,7 +77,8 @@ internal class IdnesRealEstateProvider(
 
     // ugly html parsing
     private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
-        Jsoup.parse(this).select(".c-products__inner").map {
+        Jsoup.parse(this).select(".c-products__inner").mapNotNull {
+            if (getRealEstatesCommand.type == BuildingType.LAND) return@mapNotNull it.toLand(getRealEstatesCommand)
             val linkElement = it.selectFirst("a.c-products__link")
             val titleElement = it.selectFirst(".c-products__title")
 
@@ -109,21 +131,6 @@ internal class IdnesRealEstateProvider(
             )
         }
 
-    private fun Element.getPrice(transactionType: TransactionType): Double {
-        val replaceString = when (transactionType) {
-            TransactionType.RENT -> "Kč/měsíc"
-            TransactionType.SALE -> "Kč"
-        }
-
-        return selectFirst(".c-products__price strong")
-            ?.text()
-            ?.replace(replaceString, "")
-            ?.replace(" ", "")
-            ?.trim()
-            ?.toDoubleOrNull()
-            ?: 0.0
-    }
-
     private fun logMissingData(data: String): String {
         Log.error("Missing $data while scraping iDnes reality")
 
@@ -139,7 +146,7 @@ internal class IdnesRealEstateProvider(
     private fun GetRealEstatesCommand.getBuildingType(): String =
         when (type) {
             BuildingType.HOUSE -> "domy"
-            BuildingType.LAND -> "pozemky" // todo verify
+            BuildingType.LAND -> "pozemky"
             BuildingType.APARTMENT -> "byty"
         }
 

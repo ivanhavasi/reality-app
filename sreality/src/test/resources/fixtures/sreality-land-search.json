@@ -1,0 +1,76 @@
+{
+  "results": [
+    {
+      "hash_id": 1140731980,
+      "advert_name": "Prodej stavebního pozemku 6329\u00a0m²",
+      "category_main_cb": {"name": "Pozemky", "value": 3},
+      "category_sub_cb": {"name": "Bydlení", "value": 19},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 1990.0,
+      "price_czk_m2": 1990,
+      "price_summary_czk": 12594710.0,
+      "price_unit_cb": {"name": "za m²", "value": 3},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Radotín", "district": "Hlavní město Praha", "street": "", "streetnumber": "",
+        "city_seo_name": "praha", "citypart_seo_name": "radotin", "district_seo_name": "hlavni-mesto-praha", "street_seo_name": "",
+        "gps_lat": 49.98, "gps_lon": 14.36
+      },
+      "advert_images": ["//d18-a.sdn.cz/d_18/c_img_1/abc.jpeg"],
+      "unknown_field": "ignored"
+    },
+    {
+      "hash_id": 2222,
+      "advert_name": "Prodej stavebního pozemku 850 m²",
+      "category_main_cb": {"name": "Pozemky", "value": 3},
+      "category_sub_cb": {"name": "Bydlení", "value": 19},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 0.0,
+      "price_czk_m2": 0,
+      "price_summary_czk": 0.0,
+      "price_unit_cb": {"name": "za nemovitost", "value": 1},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Dolní Chabry", "district": "Hlavní město Praha", "street": "Spořická", "streetnumber": "12",
+        "city_seo_name": "praha", "citypart_seo_name": "dolni-chabry", "street_seo_name": "sporicka",
+        "gps_lat": 50.14, "gps_lon": 14.45
+      },
+      "advert_images": []
+    },
+    {
+      "hash_id": 3333,
+      "advert_name": "Prodej stavebního pozemku 1000 m²",
+      "category_main_cb": {"name": "Pozemky", "value": 3},
+      "category_sub_cb": {"name": "Bydlení", "value": 19},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 3500000.0,
+      "price_czk_m2": 3500000,
+      "price_summary_czk": 3500000000.0,
+      "price_unit_cb": {"name": "za m²", "value": 3},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {"city": "Praha", "citypart": "Kyje", "city_seo_name": "praha", "citypart_seo_name": "kyje"},
+      "advert_images": []
+    },
+    {
+      "hash_id": 4444,
+      "advert_name": "Prodej pozemku",
+      "category_sub_cb": {"name": "Bydlení", "value": 19},
+      "price_czk": 5000000.0,
+      "price_czk_m2": null,
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {"city": "Praha"},
+      "advert_images": []
+    },
+    {
+      "hash_id": 5555,
+      "advert_name": "Prodej stavebního pozemku 700 m²",
+      "category_sub_cb": {"name": "Bydlení", "value": 19},
+      "price_czk": 5000000.0,
+      "price_czk_m2": null,
+      "price_currency_cb": {"name": "Zł", "value": 9},
+      "locality": {"city": "Praha"},
+      "advert_images": []
+    }
+  ],
+  "meta_description": null
+}

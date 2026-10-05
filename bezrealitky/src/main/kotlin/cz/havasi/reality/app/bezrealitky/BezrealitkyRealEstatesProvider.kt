@@ -8,10 +8,9 @@ import cz.havasi.reality.app.service.provider.RealEstatesProvider
 import cz.havasi.reality.app.service.util.constructFingerprint
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.ws.rs.WebApplicationException
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jsoup.Jsoup
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import kotlin.math.roundToInt
 
 @ApplicationScoped
@@ -21,7 +20,19 @@ internal class BezrealitkyRealEstatesProvider(
     override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         with(getRealEstatesCommand) {
             try {
+                if (type == BuildingType.LAND && prepareLandType() == null) {
+                    Log.debug("Bezrealitky can't classify unfiltered land results, skipping $landSubCategory")
+                    return emptyList()
+                }
                 callClient()
+            } catch (e: WebApplicationException) {
+                // past the last page Bezrealitky redirects to a generic feed, which must never be followed
+                if (e.response.status in 300..399) {
+                    Log.debug("Bezrealitky page ${calculatePage()} redirected, end of results")
+                } else {
+                    Log.error("Error while fetching Bezrealitky data, page ${calculatePage()}", e)
+                }
+                emptyList()
             } catch (e: Exception) {
                 Log.error("Error while fetching Bezrealitky data, page ${calculatePage()}", e)
                 emptyList()
@@ -33,6 +44,7 @@ internal class BezrealitkyRealEstatesProvider(
         bezrealitkyApi.searchEstates(
             offerType = prepareOfferType(),
             estateType = prepareEstateType(),
+            landType = prepareLandType(),
             osmValue = "Hlavn%C3%AD+m%C4%9Bsto+Praha%2C+Praha%2C+%C4%8Cesko", // locality - Prague
             regionOsmIds = "R435514", // locality - Prague
             currency = "CZK",
@@ -43,12 +55,11 @@ internal class BezrealitkyRealEstatesProvider(
 
     // ugly html parsing
     private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
-        Jsoup.parse(this).select("article.PropertyCard_propertyCard__moO_5").map {
+        Jsoup.parse(this).select("article.PropertyCard_propertyCard__moO_5").mapNotNull {
+            if (getRealEstatesCommand.type == BuildingType.LAND) return@mapNotNull it.toLand(getRealEstatesCommand)
             val url = it.selectFirst(".PropertyCard_propertyCardHeadline___diKI")?.selectFirst("a")?.attr("href")
             val id = url?.substringAfter("/nemovitosti-byty-domy/") ?: logMissingData("id")
-            val images = it.select("img").mapNotNull { it.attr("src").substringAfter("/_next/image?url=") }.map {
-                URLDecoder.decode(it, StandardCharsets.UTF_8)
-            }.map { it.substringBefore("&w=") }
+            val images = it.parseImages()
             val name = it.selectFirst(".PropertyCard_propertyCardHeadline___diKI")?.text() ?: logMissingData("name")
             val price = it.selectFirst(".PropertyPrice_propertyPriceAmount__WdEE1")?.text()?.substringBefore("Kč")
                 ?.filter { it != ' ' }?.toDoubleOrNull() ?: 0.0

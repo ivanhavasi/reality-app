@@ -7,6 +7,7 @@ import cz.havasi.reality.app.model.command.GetStatisticsCommand
 import cz.havasi.reality.app.model.command.GroupByDimension
 import cz.havasi.reality.app.model.command.TimeGranularity
 import cz.havasi.reality.app.service.repository.ApartmentRepository
+import jakarta.ws.rs.DefaultValue
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
@@ -30,8 +31,8 @@ public class StatisticsController(
         @QueryParam("transactionType") transactionType: TransactionType?,
         @QueryParam("sizeMin") sizeMin: Double?,
         @QueryParam("sizeMax") sizeMax: Double?,
-        @QueryParam("period") period: String = "6M",
-        @QueryParam("granularity") granularity: TimeGranularity = TimeGranularity.MONTHLY,
+        @DefaultValue("6M") @QueryParam("period") period: String,
+        @DefaultValue("MONTHLY") @QueryParam("granularity") granularity: TimeGranularity,
         @QueryParam("groupBy") groupBy: List<GroupByDimension>?,
     ): List<MarketStatistics> {
         val (dateFrom, dateTo) = parsePeriod(period)

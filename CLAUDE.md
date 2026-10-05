@@ -15,10 +15,11 @@ This is a real estate aggregator application built with Kotlin and Quarkus that 
 # Run the application (Quarkus dev mode)
 ./gradlew quarkusDev
 
-# Run tests
-./gradlew test
+# Run unit tests (fakes only, no DB or network)
+./gradlew :service:test :rest:test :sreality:test :bezrealitky:test :idnes:test
 
-# Run tests for a specific module
+# Integration tests (*IT, application module) wipe the `apartments` collection of the `reality` database.
+# If MONGODB_CONNECTION_STRING is set, Dev Services are skipped and they run against that database: unset it first.
 ./gradlew :application:test
 
 # Clean build
@@ -50,7 +51,7 @@ The application follows **hexagonal architecture** with clear separation between
 - **`mongo/`** - MongoDB persistence
   - Entities with custom codecs for type conversions
   - Repository implementations using MongoDB reactive driver with Kotlin coroutines
-  - Mongock migrations in `migration/` directory
+  - Mongock migrations in `migration/` directory (note: `004` creates a redundant ascending/descending `updatedAt` index pair)
 
 - **`sreality/`, `bezrealitky/`, `idnes/`** - Provider-specific implementations
   - Each implements `RealEstatesProvider` interface
@@ -70,21 +71,23 @@ The application follows **hexagonal architecture** with clear separation between
 3. Mark implementation as `@ApplicationScoped` (auto-discovered by CDI)
 4. Add module to `application/build.gradle.kts`
 
-**Duplicate Detection**: Apartments are identified by:
-- **ID**: Portal-specific identifier
-- **Fingerprint**: Computed from `buildingType`, `locality`, `subCategory`, `transactionType`
-- Logic in `RealEstateService.filterApartments()` finds duplicates across portals
-- Cheaper listings from same apartment are saved as `duplicates` array
+**Duplicate Detection** (`RealEstateService.filterApartments()`, fingerprint in `service/util/FingerprintUtil.kt`):
+- Candidates come from `findByIdOrFingerprint`: same `externalId`, same fingerprint, or a stored `duplicates.id`
+- **Apartments**: fingerprint `"{type}-{city}-{street}-{subCategory}-{TX}"`; a listing is a duplicate if it has the same id, or the same fingerprint with a size within 5%
+- **Land** (`BuildingType.LAND`, `subCategory` = `LandSubCategory.name`): fingerprint `"land-{city}-{TX}-{area}"` (street and subtype dropped: often missing, and portals classify plots differently). A listing is a duplicate if it has the same id, is a known duplicate (`duplicates.id`), or is the same area **on another portal** with a price within 15% and no conflicting city part (`locality.district`, compared via `toComparableCityPart`). Within one portal a different id is never a duplicate
+- A duplicate is stored in the original's `duplicates` array (with its `id`) when it comes from a new portal or is cheaper; otherwise it is dropped
+- New persisted fields must be nullable: the bson-kotlin codec ignores Kotlin defaults on decode
 
-**Scheduled Scraping**: `RealityScheduler` runs every 20 minutes (6-23h) with:
+**Scheduled Scraping**: `RealityScheduler` has two jobs sharing a mutex, both with `SKIP` concurrency:
+- Apartments (`reality.scheduler.cron`, every 30 minutes 6-23h): SALE, then RENT; providers in parallel; up to 5 pages (22 items) per provider, stopping at the first page with nothing new
+- Land (`reality.scheduler.land-cron`, env `LAND_SCHEDULER_CRON`, default `"off"`): Prague building plots for sale; providers one after another (so a plot on two portals in one run is merged); every page is scanned (up to 12) because portals reorder by "bump"
 - Random delays between requests (700-2500ms) to avoid detection
-- Processes SALE, then RENT transactions
-- Fetches ~5 pages (22 items each) per provider per run
+- Cron values must be quoted; only `"off"`/`"disabled"` disable a job (a bare YAML `off` or `"-"` fails startup)
 
 **Notification System**: Event-driven architecture:
 - When new apartments are saved, `UserNotificationService` finds matching user filters
 - Handlers: `EmailNotificationEventHandler`, `DiscordWebhookNotificationEventHandler`, `WebhookNotificationEventHandler`
-- Prevents duplicate notifications via `SentNotificationRepository`
+- Sent notifications are recorded via `SentNotificationRepository` (for history only; it is not consulted before sending)
 
 ## Configuration
 
@@ -120,6 +123,8 @@ Observability: OpenTelemetry configured to export to Grafana Alloy (endpoint: `h
 - All subprojects enforce **explicit API mode** - public APIs must be marked with `public`/`internal`
 - Coroutines are used extensively - most service methods are `suspend fun`
 - MongoDB operations use reactive driver adapted with Kotlin coroutines (not blocking)
-- Security: `/api/real-estates/process` (POST) requires ADMIN role, GET endpoints require USER role except `/api/real-estates/{id}` (public)
-- Scheduler can be disabled/configured via `reality.scheduler.cron` property
+- Security: `/api/real-estates/process` (POST, `?building=&transaction=&landSubCategory=`) requires ADMIN role, GET endpoints require USER role except `/api/real-estates/{id}` and `/api/statistics/market` (public)
+- `@RequireUserMatch` endpoints allow only the user whose id is in the path (ADMIN bypasses); notification repository operations are scoped by user id
+- Kotlin default values on JAX-RS resource params are ignored: every non-null query param needs `@DefaultValue`
+- Schedulers are configured via `reality.scheduler.cron` and `reality.scheduler.land-cron`
 - CORS configured for `https://reality.havasi.me` origin

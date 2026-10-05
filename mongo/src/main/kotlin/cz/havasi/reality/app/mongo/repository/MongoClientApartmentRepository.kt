@@ -138,6 +138,7 @@ public class MongoClientApartmentRepository(
         val filters = mutableListOf<Bson>()
         filters.add(Filters.eq("externalId", id))
         filters.add(Filters.eq("fingerprint", fingerprint))
+        filters.add(Filters.eq("duplicates.id", id))
 
         return mongoCollection.find(Filters.or(filters), ApartmentEntity::class.java, options)
             .asFlow()
@@ -163,8 +164,8 @@ public class MongoClientApartmentRepository(
         )
     }
 
-    private fun FindRealEstatesCommand.createBaseFilters() =
-        Filters.and(
+    private fun FindRealEstatesCommand.createBaseFilters(): Bson {
+        val filters = mutableListOf(
             Filters.eq("transactionType", transactionType.name),
             Filters.eq("mainCategory", buildingType.name),
             Filters.gte("sizeInM2", sizeMin.toDouble()),
@@ -172,6 +173,11 @@ public class MongoClientApartmentRepository(
             Filters.gte("price", priceMin.toDouble()),
             Filters.lte("price", priceMax.toDouble()),
         )
+        if (subCategories.isNotEmpty()) {
+            filters.add(Filters.`in`("subCategory", subCategories))
+        }
+        return Filters.and(filters)
+    }
 
     private fun ApartmentEntity.toModel() =
         Apartment(
@@ -200,6 +206,7 @@ public class MongoClientApartmentRepository(
             pricePerM2 = pricePerM2,
             images = images,
             provider = ProviderType.valueOf(provider.name),
+            id = id,
         )
 
     private fun LocalityEntity.toModel() =
@@ -242,6 +249,7 @@ public class MongoClientApartmentRepository(
             pricePerM2 = pricePerM2,
             images = images,
             provider = ProviderTypeEntity.valueOf(provider.name),
+            id = id,
         )
 
     private fun Locality.toEntity() =
@@ -276,7 +284,7 @@ public class MongoClientApartmentRepository(
                             "\$concatArrays",
                             listOf(
                                 listOf("\$price"),
-                                Document("\$ifNull", listOf("\$duplicates.price", emptyList<Double>())),
+                                positiveValuesOf("\$duplicates.price"),
                             ),
                         ),
                     ),
@@ -289,7 +297,7 @@ public class MongoClientApartmentRepository(
                             "\$concatArrays",
                             listOf(
                                 listOf(Document("\$ifNull", listOf("\$pricePerM2", Double.MAX_VALUE))),
-                                Document("\$ifNull", listOf("\$duplicates.pricePerM2", emptyList<Double>())),
+                                positiveValuesOf("\$duplicates.pricePerM2"),
                             ),
                         ),
                     ),
@@ -314,6 +322,15 @@ public class MongoClientApartmentRepository(
             Aggregates.sort(createSort(command)),
         )
 
+    // price-on-request duplicates are stored with price 0 and would drag the lowest price down
+    private fun positiveValuesOf(arrayField: String): Document =
+        Document(
+            "\$filter",
+            Document()
+                .append("input", Document("\$ifNull", listOf(arrayField, emptyList<Double>())))
+                .append("cond", Document("\$gt", listOf("\$\$this", 0))),
+        )
+
     private fun createStatisticsFilters(command: GetStatisticsCommand): Bson {
         val filters = mutableListOf<Bson>()
 
@@ -331,7 +348,8 @@ public class MongoClientApartmentRepository(
         // Data quality filters - exclude invalid/outlier data
         filters.add(Filters.gt("price", 0.0))  // Exclude properties with price <= 0
         filters.add(Filters.gt("sizeInM2", 5.0))  // Exclude properties with size <= 5 m²
-        filters.add(Filters.lt("sizeInM2", 10000.0))  // Exclude properties with size >= 10,000 m² (extreme outliers)
+        val maxSize = if (command.buildingType == BuildingType.LAND) 1_000_000.0 else 10_000.0
+        filters.add(Filters.lt("sizeInM2", maxSize))  // Exclude extreme outliers; plots are legitimately larger than 10,000 m²
         filters.add(Filters.gt("pricePerM2", 0.0))  // Exclude properties with pricePerM2 <= 0
 
         return if (filters.isEmpty()) Document() else Filters.and(filters)

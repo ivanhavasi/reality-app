@@ -41,20 +41,26 @@ internal class MongoClientUserNotificationRepository(
             ?.toHexString()
             ?: throw error("Notification for user with id ${command.userId} was not saved into mongo db")
 
-    override suspend fun removeUserNotification(notificationId: String): Boolean =
+    override suspend fun removeUserNotification(userId: String, notificationId: String): Boolean =
         mongoCollection.deleteOne(
-            Filters.eq("_id", ObjectId(notificationId)),
+            ownedBy(userId, notificationId),
         )
             .awaitSuspending()
             .deletedCount > 0
 
     override suspend fun updateUserNotification(command: UpdateUserNotificationCommand): Boolean =
         mongoCollection.updateOne(
-            Filters.eq("_id", ObjectId(command.notificationId)),
+            ownedBy(command.userId, command.notificationId),
             command.toMongoUpdate(),
         )
             .awaitSuspending()
             .modifiedCount > 0
+
+    private fun ownedBy(userId: String, notificationId: String): Bson =
+        Filters.and(
+            Filters.eq("_id", ObjectId(notificationId)),
+            Filters.eq("userId", ObjectId(userId)),
+        )
 
     private fun UpdateUserNotificationCommand.toMongoUpdate() =
         listOfNotNull(
@@ -91,6 +97,7 @@ internal class MongoClientUserNotificationRepository(
         filters.add(
             Filters.or(
                 Filters.not(Filters.exists("filter.subTypes")),
+                Filters.size("filter.subTypes", 0),
                 Filters.`in`("filter.subTypes", subTypes),
             ),
         )

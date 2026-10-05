@@ -35,6 +35,7 @@ public data class ApartmentDuplicateEntity(
     val pricePerM2: Double?,
     val images: List<String> = emptyList(),
     val provider: ProviderTypeEntity = ProviderTypeEntity.UNKNOWN,
+    val id: String? = null, // nullable: the codec ignores defaults, so documents stored before this field decode as null
 )
 
 @RegisterForReflection

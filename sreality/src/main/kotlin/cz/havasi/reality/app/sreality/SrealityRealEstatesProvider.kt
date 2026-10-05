@@ -2,7 +2,6 @@ package cz.havasi.reality.app.sreality
 
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.BuildingType
-import cz.havasi.reality.app.model.CurrencyType
 import cz.havasi.reality.app.model.Locality
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.GetRealEstatesCommand
@@ -40,6 +39,7 @@ internal class SrealityRealEstatesProvider(
         srealityApi.searchEstates(
             categoryType = resolveCategoryType(),
             categoryMain = resolveCategoryMain(),
+            categorySub = resolveCategorySub(),
             localityCountryId = 112,
             localityRegionId = 10,
             limit = limit,
@@ -51,7 +51,11 @@ internal class SrealityRealEstatesProvider(
             .handleResult()
             .results
             .also { Log.info("Sreality estates found size: ${it.size}") }
-            .map { it.toApartment(this) }
+            .mapNotNull { estate ->
+                runCatching { if (type == BuildingType.LAND) estate.toLand(this, baseUrl) else estate.toApartment(this) }
+                    .onFailure { e -> Log.warn("Skipping Sreality estate ${estate.hashId}", e) }
+                    .getOrNull()
+            }
 
     private fun GetRealEstatesCommand.resolveCategoryType(): Int =
         when (transaction) {
@@ -117,13 +121,6 @@ internal class SrealityRealEstatesProvider(
             latitude = latitude,
             longitude = longitude,
         )
-
-    private fun String.toCurrencyType() = when (this) {
-        "Kč" -> CurrencyType.CZK
-        "€" -> CurrencyType.EUR
-        "$" -> CurrencyType.USD
-        else -> error("Unknown currency type: $this")
-    }
 
     private fun String.toMainCategory() = when (this) {
         "Byty" -> BuildingType.APARTMENT

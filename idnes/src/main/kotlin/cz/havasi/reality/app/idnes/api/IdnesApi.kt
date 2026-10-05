@@ -24,12 +24,13 @@ internal interface IdnesApi {
     ): RestResponse<String>
 
     @GET
-    @Path("/{transactionType}/{buildingType}/{location}/")
+    @Path("/{transactionType}/{buildingType}/{subType}/{location}/")
     @Produces(MediaType.TEXT_HTML)
-    suspend fun searchEstatesForOtherPages(
+    suspend fun searchEstatesWithSubType(
         @PathParam("transactionType") transactionType: String,
         @PathParam("buildingType") buildingType: String,
+        @PathParam("subType") subType: String,
         @PathParam("location") location: String,
-        @QueryParam("page") page: Int,
+        @QueryParam("page") page: Int?,
     ): RestResponse<String>
 }

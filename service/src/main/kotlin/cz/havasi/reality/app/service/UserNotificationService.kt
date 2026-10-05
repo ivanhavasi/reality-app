@@ -28,23 +28,25 @@ public class UserNotificationService(
     public suspend fun addUserNotification(addUserNotificationCommand: AddUserNotificationCommand): String =
         userNotificationRepository.addUserNotification(addUserNotificationCommand)
 
-    public suspend fun removeUserNotification(notificationId: String): Boolean =
-        userNotificationRepository.removeUserNotification(notificationId)
+    public suspend fun removeUserNotification(userId: String, notificationId: String): Boolean =
+        userNotificationRepository.removeUserNotification(userId, notificationId)
 
     public suspend fun getUserNotifications(userId: String): List<Notification> =
         userNotificationRepository.getUserNotifications(userId)
 
-    public suspend fun enableUserNotification(notificationId: String): Boolean =
+    public suspend fun enableUserNotification(userId: String, notificationId: String): Boolean =
         userNotificationRepository.updateUserNotification(
             UpdateUserNotificationCommand(
+                userId = userId,
                 notificationId = notificationId,
                 enabled = true,
             ),
         )
 
-    public suspend fun disableUserNotification(notificationId: String): Boolean =
+    public suspend fun disableUserNotification(userId: String, notificationId: String): Boolean =
         userNotificationRepository.updateUserNotification(
             UpdateUserNotificationCommand(
+                userId = userId,
                 notificationId = notificationId,
                 enabled = false,
             ),

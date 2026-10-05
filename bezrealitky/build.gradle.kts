@@ -22,4 +22,5 @@ dependencies {
     implementation(project(":service"))
 
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 }
