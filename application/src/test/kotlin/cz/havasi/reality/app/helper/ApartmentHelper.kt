@@ -26,6 +26,7 @@ object ApartmentHelper {
         url = "https://example.com/apartment/123",
         pricePerM2 = 120000.0,
         sizeInM2 = 62.0,
+        landSizeInM2 = null,
         currency = "CZK",
         mainCategory = "APARTMENT",
         subCategory = "3+kk",

@@ -48,7 +48,7 @@ internal fun Element.toLand(command: GetRealEstatesCommand): Apartment? {
         Log.warn("Bezrealitky land $id: $price Kč for $size m² looks like a per-m² price, skipping")
         return null
     }
-    val locality = selectFirst(".PropertyCard_propertyCardAddress__hNqyR")?.text()?.toLandLocality()
+    val locality = selectFirst(".PropertyCard_propertyCardAddress__hNqyR")?.text()?.toCityPartLocality()
         ?: return null.also { Log.warn("Bezrealitky land $id has no address, skipping") }
     return Apartment(
         id = id,
@@ -80,11 +80,11 @@ internal fun Element.parseImages(): List<String> =
         .map { URLDecoder.decode(it, StandardCharsets.UTF_8) }
         .map { it.substringBefore("&w=") }
 
-private fun String.parseSquareMeters(): Double? =
+internal fun String.parseSquareMeters(): Double? =
     substringBefore("m²").filter { it.isDigit() || it == ',' }.replace(',', '.').toDoubleOrNull()
 
 // Prague: "[Street, ]Praha - Part"
-private fun String.toLandLocality(): Locality {
+internal fun String.toCityPartLocality(): Locality {
     val parts = split(",").map { it.trim() }.filter { it.isNotEmpty() }
     return Locality(
         city = "Praha",
@@ -97,5 +97,5 @@ private fun String.toLandLocality(): Locality {
 }
 
 // the label ("Prodej pozemku") and the address are adjacent spans, so text() would glue them together
-private fun Element.headlineText(): String =
+internal fun Element.headlineText(): String =
     selectFirst("a")?.children()?.takeIf { it.isNotEmpty() }?.joinToString(" ") { it.text() } ?: text()

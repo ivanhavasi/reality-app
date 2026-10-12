@@ -47,7 +47,8 @@ quarkus:
     "idnes-api":
       url: "https://reality.idnes.cz"
       connect-timeout: 3000
-      read-timeout: 10000
+      # listing pages take 6-16 s to render
+      read-timeout: 30000
     "bezrealitky-api":
       url: "https://www.bezrealitky.cz"
       connect-timeout: 3000
@@ -68,3 +69,4 @@ reality:
     cron: "0 */30 6-23 * * ?"
     # must stay quoted: a bare `off` is read as boolean false and startup fails; "off"/"disabled" are the only disable values
     land-cron: "${LAND_SCHEDULER_CRON:off}"
+    house-cron: "${HOUSE_SCHEDULER_CRON:off}"

@@ -64,7 +64,7 @@ internal class RestDiscordClient(
         url = getOrNull(0) ?: "https://picsum.photos/500/400",
     )
 
-    private fun Apartment.getFieldsData() = listOf(
+    private fun Apartment.getFieldsData() = listOfNotNull(
         DiscordField(
             name = "Price",
             value = price.formatToNumberWithSpaces(),
@@ -75,6 +75,13 @@ internal class RestDiscordClient(
             value = "${sizeInM2.formatToNumberWithSpaces()} m²",
             inline = true,
         ),
+        landSizeInM2?.let {
+            DiscordField(
+                name = "Plot",
+                value = "${it.formatToNumberWithSpaces()} m²",
+                inline = true,
+            )
+        },
         DiscordField(
             name = "Price per m²",
             value = pricePerM2?.formatToNumberWithSpaces() ?: "Unknown",

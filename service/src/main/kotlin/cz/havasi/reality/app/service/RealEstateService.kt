@@ -15,6 +15,7 @@ import cz.havasi.reality.app.service.util.areDoublesEqualWithTolerance
 import cz.havasi.reality.app.service.util.forEachAsync
 import cz.havasi.reality.app.service.util.forEachSequentially
 import cz.havasi.reality.app.service.util.toComparableCityPart
+import cz.havasi.reality.app.service.util.toComparableStreet
 import io.quarkus.arc.All
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
@@ -32,9 +33,9 @@ public class RealEstateService(
         transactionType: TransactionType,
         landSubCategory: LandSubCategory? = null,
     ) {
-        // land runs providers one after another, so a plot listed on two portals in the same run is merged, not stored twice
-        if (buildingType == BuildingType.LAND) {
-            realEstateProviders.forEachSequentially(message = "Fetching and saving land") {
+        // land and houses run providers one after another, so a property listed on two portals in the same run is merged, not stored twice
+        if (buildingType != BuildingType.APARTMENT) {
+            realEstateProviders.forEachSequentially(message = "Fetching and saving $buildingType") {
                 fetchAndSaveApartmentsForProvider(it, buildingType, transactionType, landSubCategory)
             }
         } else {
@@ -58,7 +59,11 @@ public class RealEstateService(
         landSubCategory: LandSubCategory?,
     ) {
         val numberOfApartments = 22
-        val maxCalls = if (buildingType == BuildingType.LAND) 12 else 5
+        val maxCalls = when (buildingType) {
+            BuildingType.APARTMENT -> 5
+            BuildingType.LAND -> 12
+            BuildingType.HOUSE -> 50 // Sreality lists ~820 Prague houses for sale: 38 pages
+        }
 
         for (i in 0 until maxCalls) {
             val fetched = provider
@@ -72,8 +77,8 @@ public class RealEstateService(
                 .saveApartments()
                 .sendNotifications()
 
-            // portals reorder land by "bump", so new plots can sit past the first page: land always scans every page
-            if (saved.isEmpty() && buildingType != BuildingType.LAND) {
+            // portals reorder by "bump", so new plots and houses can sit past the first page: they always scan every page
+            if (saved.isEmpty() && buildingType == BuildingType.APARTMENT) {
                 Log.debug("No more apartments to save for provider $provider")
                 break
             }
@@ -102,18 +107,18 @@ public class RealEstateService(
     private suspend fun List<Apartment>.filterApartments(): ApartmentsAndDuplicates {
         val duplicates = mutableListOf<UpdateApartmentWithDuplicateCommand>()
         val newApartments = mutableListOf<Apartment>()
-        // duplicates are saved after the whole page, so land tracks them here: otherwise two listings of one portal
-        // on the same page could both attach to the same plot
-        val pendingLandOriginals = mutableMapOf<String, Apartment>()
+        // duplicates are saved after the whole page, so land and houses track them here: otherwise two listings of one
+        // portal on the same page could both attach to the same property
+        val pendingOriginals = mutableMapOf<String, Apartment>()
 
         forEach {
-            val originalApartment = findOriginalApartment(it, pendingLandOriginals)
+            val originalApartment = findOriginalApartment(it, pendingOriginals)
             if (areApartmentsDuplicates(it, originalApartment)) {
                 if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check- areApartmentsDuplicates
                     val originalApartmentWithLocation = resolveLocationFromDuplicate(originalApartment, it)
                     duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartmentWithLocation, it.toDuplicate()))
-                    if (it.mainCategory == BuildingType.LAND) {
-                        pendingLandOriginals[originalApartment.id] = originalApartment.addDuplicate(it.toDuplicate())
+                    if (it.mainCategory != BuildingType.APARTMENT) {
+                        pendingOriginals[originalApartment.id] = originalApartment.addDuplicate(it.toDuplicate())
                     }
                 }
             } else {
@@ -145,17 +150,18 @@ public class RealEstateService(
 
     private suspend fun findOriginalApartment(
         apartment: Apartment,
-        pendingLandOriginals: Map<String, Apartment>,
+        pendingOriginals: Map<String, Apartment>,
     ): Apartment? {
         val candidates = apartmentRepository.findByIdOrFingerprint(apartment.id, apartment.fingerprint)
-            .map { pendingLandOriginals[it.id] ?: it }
+            .map { pendingOriginals[it.id] ?: it }
 
         return candidates.firstOrNull { it.id == apartment.id } ?: when (apartment.mainCategory) {
-            // a known duplicate wins over a newer plot with the same area
-            BuildingType.LAND -> candidates.firstOrNull { apartment.id in it.duplicateIds() }
-                ?: candidates.firstOrNull { it.mainCategory == BuildingType.LAND && it.isSameRealEstateAs(apartment) }
+            // a known duplicate wins over a newer property with the same area
+            BuildingType.LAND, BuildingType.HOUSE -> candidates.firstOrNull { apartment.id in it.duplicateIds() }
+                ?: candidates.firstOrNull { it.mainCategory == apartment.mainCategory && it.isSameRealEstateAs(apartment) }
 
-            else -> candidates.firstOrNull { it.fingerprint == apartment.fingerprint && it.isSameRealEstateAs(apartment) }
+            BuildingType.APARTMENT ->
+                candidates.firstOrNull { it.fingerprint == apartment.fingerprint && it.isSameRealEstateAs(apartment) }
         }
     }
 
@@ -167,20 +173,34 @@ public class RealEstateService(
 
     private fun Apartment.isSameRealEstateAs(other: Apartment): Boolean =
         when (mainCategory) {
-            // within one provider a different id is never the same plot; Prague is one "city", so cross-portal merges need the guard
-            BuildingType.LAND -> other.id in duplicateIds()
-                || (other.provider != provider
-                && duplicates.none { it.provider == other.provider }
-                && hasSimilarPrice(other)
-                && !hasConflictingCityPart(other))
+            BuildingType.LAND -> other.id in duplicateIds() || isListedOnAnotherPortal(other)
+            // houses of one development share area and price and differ only in street and plot
+            BuildingType.HOUSE -> other.id in duplicateIds()
+                || (isListedOnAnotherPortal(other) && !hasConflictingStreet(other) && hasCompatibleLandSize(other))
 
-            else -> areDoublesEqualWithTolerance(sizeInM2, other.sizeInM2)
+            BuildingType.APARTMENT -> areDoublesEqualWithTolerance(sizeInM2, other.sizeInM2)
         }
+
+    // within one provider a different id is never the same property; Prague is one "city", so cross-portal merges need the guards
+    private fun Apartment.isListedOnAnotherPortal(other: Apartment): Boolean =
+        other.provider != provider
+            && duplicates.none { it.provider == other.provider }
+            && hasSimilarPrice(other)
+            && !hasConflictingCityPart(other)
 
     private fun Apartment.duplicateIds(): List<String> = duplicates.mapNotNull { it.id }
 
     private fun Apartment.hasSimilarPrice(other: Apartment): Boolean =
-        price <= 0 || other.price <= 0 || areDoublesEqualWithTolerance(price, other.price, LAND_PRICE_TOLERANCE)
+        price <= 0 || other.price <= 0 || areDoublesEqualWithTolerance(price, other.price, CROSS_PORTAL_PRICE_TOLERANCE)
+
+    private fun Apartment.hasConflictingStreet(other: Apartment): Boolean {
+        val mine = locality.street.toComparableStreet()
+        val theirs = other.locality.street.toComparableStreet()
+        return mine != null && theirs != null && mine != theirs
+    }
+
+    private fun Apartment.hasCompatibleLandSize(other: Apartment): Boolean =
+        landSizeInM2 == null || other.landSizeInM2 == null || landSizeInM2 == other.landSizeInM2
 
     private fun Apartment.hasConflictingCityPart(other: Apartment): Boolean {
         val mine = locality.district.toComparableCityPart()
@@ -225,4 +245,4 @@ public class RealEstateService(
         )
 }
 
-private const val LAND_PRICE_TOLERANCE = 0.15
+private const val CROSS_PORTAL_PRICE_TOLERANCE = 0.15

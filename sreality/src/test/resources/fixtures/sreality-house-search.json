@@ -1,0 +1,111 @@
+{
+  "results": [
+    {
+      "hash_id": 451055692,
+      "advert_name": "Prodej rodinného domu 392 m², pozemek 1068 m²",
+      "category_main_cb": {"name": "Domy", "value": 2},
+      "category_sub_cb": {"name": "Rodinný", "value": 37},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 44900000.0,
+      "price_czk_m2": 114541,
+      "price_summary_czk": 44900000.0,
+      "price_unit_cb": {"name": "za nemovitost", "value": 1},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Dolní Měcholupy", "district": "Praha 10", "street": "Na Návsi", "streetnumber": null,
+        "city_seo_name": "praha", "citypart_seo_name": "dolni-mecholupy", "district_seo_name": "praha-10", "street_seo_name": "na-navsi",
+        "gps_lat": 50.0554002778, "gps_lon": 14.5624091667
+      },
+      "advert_images": ["//d18-a.sdn.cz/d_18/c_img_qD_F/nEwftpXyZDPeBmCWhHVsprn/da4c.jpeg"],
+      "unknown_field": "ignored"
+    },
+    {
+      "hash_id": 99782732,
+      "advert_name": "Prodej vily 392 m², pozemek 1068 m²",
+      "category_main_cb": {"name": "Domy", "value": 2},
+      "category_sub_cb": {"name": "Vila", "value": 39},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 44900000.0,
+      "price_czk_m2": 114541,
+      "price_summary_czk": 44900000.0,
+      "price_unit_cb": {"name": "za nemovitost", "value": 1},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Dolní Měcholupy", "district": "Praha 10", "street": "Na Návsi", "streetnumber": null,
+        "city_seo_name": "praha", "citypart_seo_name": "dolni-mecholupy", "district_seo_name": "praha-10", "street_seo_name": "na-navsi",
+        "gps_lat": 50.0554002778, "gps_lon": 14.5624091667
+      },
+      "advert_images": ["//d18-a.sdn.cz/d_18/c_img_qD_F/nEwftpXyZ4AdfifHVsovW/aa13.jpeg"]
+    },
+    {
+      "hash_id": 933176140,
+      "advert_name": "Prodej rodinného domu 139 m², pozemek 210 m²",
+      "category_main_cb": {"name": "Domy", "value": 2},
+      "category_sub_cb": {"name": "Rodinný", "value": 37},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 0.0,
+      "price_czk_m2": 0,
+      "price_summary_czk": 0.0,
+      "price_unit_cb": {"name": "za nemovitost", "value": 1},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Třeboradice", "district": "Praha 9", "street": "Englerova", "streetnumber": "14",
+        "city_seo_name": "praha", "citypart_seo_name": "treboradice", "district_seo_name": "praha-9", "street_seo_name": "englerova",
+        "gps_lat": 50.1654505270131, "gps_lon": 14.5276134679741
+      },
+      "advert_images": ["//d18-a.sdn.cz/d_18/c_img_qF_C/nOdL4BtPEyCi6LRVmH02a3R/bf09.jpeg"]
+    },
+    {
+      "hash_id": 2137755724,
+      "advert_name": "Prodej chaty 10 m², pozemek 169 m²",
+      "category_main_cb": {"name": "Domy", "value": 2},
+      "category_sub_cb": {"name": "Chata", "value": 33},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 599000.0,
+      "price_czk_m2": 59900,
+      "price_summary_czk": 599000.0,
+      "price_unit_cb": {"name": "za nemovitost", "value": 1},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Střešovice", "district": "Praha 6", "street": "Dělostřelecká", "streetnumber": "",
+        "city_seo_name": "praha", "citypart_seo_name": "stresovice", "district_seo_name": "praha-6", "street_seo_name": "delostrelecka",
+        "gps_lat": 50.097978, "gps_lon": 14.383619
+      },
+      "advert_images": []
+    },
+    {
+      "hash_id": 5555,
+      "advert_name": "Pronájem rodinného domu 65 m², pozemek 1 m²",
+      "category_main_cb": {"name": "Domy", "value": 2},
+      "category_sub_cb": {"name": "Neznámý", "value": 99},
+      "category_type_cb": {"name": "Pronájem", "value": 2},
+      "price_czk": 19500.0,
+      "price_czk_m2": 300,
+      "price_summary_czk": 19500.0,
+      "price_unit_cb": {"name": "za měsíc", "value": 2},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "", "district": "Praha 6", "street": "V Sedlci", "streetnumber": null,
+        "city_seo_name": "praha", "citypart_seo_name": null, "district_seo_name": "praha-6", "street_seo_name": "v-sedlci",
+        "gps_lat": 50.12, "gps_lon": 14.39
+      },
+      "advert_images": []
+    },
+    {
+      "hash_id": 6666,
+      "advert_name": "Prodej rodinného domu",
+      "category_main_cb": {"name": "Domy", "value": 2},
+      "category_sub_cb": {"name": "Rodinný", "value": 37},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 9000000.0,
+      "price_czk_m2": null,
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Kyje", "district": "Praha 9", "street": "", "streetnumber": null,
+        "city_seo_name": "praha", "citypart_seo_name": "kyje", "street_seo_name": null,
+        "gps_lat": 50.1, "gps_lon": 14.55
+      },
+      "advert_images": []
+    }
+  ]
+}

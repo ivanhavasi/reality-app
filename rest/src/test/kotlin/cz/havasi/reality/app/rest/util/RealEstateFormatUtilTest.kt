@@ -1,5 +1,6 @@
 package cz.havasi.reality.app.rest.util
 
+import cz.havasi.reality.app.model.BuildingType
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -9,6 +10,15 @@ internal class RealEstateFormatUtilTest {
         assertEquals("Building plot", LAND_PLOT.typeLabel())
         assertEquals("Land", LAND_PLOT.copy(subCategory = null).typeLabel())
         assertEquals("Land", LAND_PLOT.copy(subCategory = "Bydlení").typeLabel())
+    }
+
+    @Test
+    fun `typeLabel uses the house subtype label`() {
+        val house = APARTMENT.copy(mainCategory = BuildingType.HOUSE, subCategory = "VILLA")
+
+        assertEquals("Villa", house.typeLabel())
+        assertEquals("House", house.copy(subCategory = null).typeLabel())
+        assertEquals("House", house.copy(subCategory = "5+kk").typeLabel())
     }
 
     @Test

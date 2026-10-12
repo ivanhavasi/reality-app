@@ -4,6 +4,7 @@ import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.command.SendApartmentDiscordMessageCommand
 import cz.havasi.reality.app.rest.client.api.DiscordApi
 import cz.havasi.reality.app.rest.client.model.DiscordWebhookBody
+import cz.havasi.reality.app.rest.util.HOUSE
 import cz.havasi.reality.app.rest.util.LAND_PLOT
 import cz.havasi.reality.app.rest.util.duplicate
 import cz.havasi.reality.app.rest.util.normalizeSpaces
@@ -39,6 +40,23 @@ internal class RestDiscordClientTest {
         assertEquals("Building plot", fields["Type"])
         assertEquals("3 200 000", fields["Price"])
         fields.values.forEach { assertFalse(it.contains("null"), it) }
+    }
+
+    @Test
+    fun `house message has a plot field after the size`() = runTest {
+        client.sendApartmentDiscordMessage(SendApartmentDiscordMessageCommand("id", "token", HOUSE))
+        val fields = sent.last().embeds.single().fields
+
+        assertEquals(listOf("Price", "Size", "Plot"), fields.take(3).map { it.name })
+        assertEquals("156 m²", fields[1].value.normalizeSpaces())
+        assertEquals("1 296 m²", fields[2].value.normalizeSpaces())
+        assertEquals("Family house", fields.single { it.name == "Type" }.value)
+    }
+
+    @Test
+    fun `land and houses without a known plot have no plot field`() = runTest {
+        assertNull(fieldsFor(LAND_PLOT)["Plot"])
+        assertNull(fieldsFor(HOUSE.copy(landSizeInM2 = null))["Plot"])
     }
 
     @Test

@@ -15,6 +15,7 @@ public data class ApartmentEntity(
     val price: Double,
     val pricePerM2: Double?,
     val sizeInM2: Double,
+    val landSizeInM2: Double?, // nullable: the codec ignores defaults, so documents stored before this field decode as null
     val currency: String,
     val locality: LocalityEntity,
     val mainCategory: String,

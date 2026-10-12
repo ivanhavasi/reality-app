@@ -25,7 +25,7 @@ internal fun SrealityApartment.toLand(command: GetRealEstatesCommand, baseUrl: S
     val size = AREA_REGEX.findAll(name).lastOrNull()?.groupValues?.get(1)?.toDouble()
         ?: return null.also { Log.warn("Sreality land $hashId has no area in '$name', skipping") }
     val price = resolveLandPrice()
-    val landLocality = locality.toLandLocality()
+    val landLocality = locality.toCityPartLocality()
     val landSubCategory = SrealityLandSubCategory.fromCode(subCategory?.value)
     val subCategory = landSubCategory?.canonical ?: command.landSubCategory
     return Apartment(
@@ -57,7 +57,8 @@ internal fun SrealityApartment.toLand(command: GetRealEstatesCommand, baseUrl: S
 private fun SrealityApartment.resolveLandPrice(): Double =
     if (priceUnit?.value == PRICE_UNIT_PER_M2 && price <= MAX_PLAUSIBLE_PRICE_PER_M2) priceSummary ?: price else price
 
-private fun SrealityLocality.toLandLocality() =
+// district is the city part ("Radotín"), not "Praha 5": the land and house dedup guards compare it
+internal fun SrealityLocality.toCityPartLocality() =
     Locality(
         city = city,
         district = citypart?.ifBlank { null },

@@ -57,6 +57,7 @@ internal class BezrealitkyRealEstatesProvider(
     private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         Jsoup.parse(this).select("article.PropertyCard_propertyCard__moO_5").mapNotNull {
             if (getRealEstatesCommand.type == BuildingType.LAND) return@mapNotNull it.toLand(getRealEstatesCommand)
+            if (getRealEstatesCommand.type == BuildingType.HOUSE) return@mapNotNull it.toHouse(getRealEstatesCommand)
             val url = it.selectFirst(".PropertyCard_propertyCardHeadline___diKI")?.selectFirst("a")?.attr("href")
             val id = url?.substringAfter("/nemovitosti-byty-domy/") ?: logMissingData("id")
             val images = it.parseImages()

@@ -69,7 +69,7 @@ internal fun Element.toLand(command: GetRealEstatesCommand): Apartment? {
         Log.warn("iDnes land $id: $price Kč for $size m² looks like a per-m² price, skipping")
         return null
     }
-    val locality = selectFirst(".c-products__info")?.text()?.toLandLocality()
+    val locality = selectFirst(".c-products__info")?.text()?.toCityPartLocality()
         ?: return null.also { Log.warn("iDnes land $id has no locality, skipping") }
     return Apartment(
         id = id,
@@ -107,7 +107,7 @@ internal fun Element.getPrice(transactionType: TransactionType): Double {
 }
 
 // Prague: "[Ulice, ]Praha[ N][ - Část]"
-private fun String.toLandLocality(): Locality {
+internal fun String.toCityPartLocality(): Locality {
     val parts = split(",").map { it.trim() }.filter { it.isNotEmpty() }
     return Locality(
         city = "Praha",

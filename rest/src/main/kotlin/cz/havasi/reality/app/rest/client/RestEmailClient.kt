@@ -11,6 +11,7 @@ import cz.havasi.reality.app.rest.client.model.MailjetEmailsWrapper
 import cz.havasi.reality.app.service.util.firstCapitalOthersLowerCase
 import cz.havasi.reality.app.rest.util.buildingTypeLabel
 import cz.havasi.reality.app.rest.util.formatToNumberWithSpaces
+import cz.havasi.reality.app.rest.util.sizeLabel
 import cz.havasi.reality.app.rest.util.toDisplayString
 import cz.havasi.reality.app.rest.util.typeLabel
 import cz.havasi.reality.app.service.client.EmailClient
@@ -65,7 +66,7 @@ internal class RestEmailClient(
         listOf(EmailAddress(email = email, name = email))
 
     private fun Apartment.toSubject() =
-        "${typeLabel()} ${sizeInM2.formatToNumberWithSpaces()} m² for ${transactionType.name.lowercase()} in ${locality.toDisplayString()} for ${price.formatToNumberWithSpaces()} $currency"
+        "${typeLabel()} ${sizeLabel()} for ${transactionType.name.lowercase()} in ${locality.toDisplayString()} for ${price.formatToNumberWithSpaces()} $currency"
 
     private fun Apartment.toTextPart() =
         """
@@ -73,7 +74,7 @@ internal class RestEmailClient(
 
             Name: $name
             Price: ${price.formatToNumberWithSpaces()} $currency
-            Size: ${sizeInM2.formatToNumberWithSpaces()} m²
+            Size: ${sizeLabel()}
             Price per m²: ${pricePerM2?.formatToNumberWithSpaces() ?: "Unknown"} $currency
             Location: ${locality.toDisplayString()}
             Type: ${typeLabel()}
@@ -157,7 +158,7 @@ internal class RestEmailClient(
                     <h2>$name</h2>
                     <div class="details">
                         <p><strong>Price:</strong> ${price.formatToNumberWithSpaces()} $currency</p>
-                        <p><strong>Size:</strong> ${sizeInM2.formatToNumberWithSpaces()} m²</p>
+                        <p><strong>Size:</strong> ${sizeLabel()}</p>
                         <p><strong>Price per m²:</strong> ${pricePerM2?.formatToNumberWithSpaces() ?: "Unknown"} $currency</p>
                         <p><strong>Location:</strong> ${locality.toDisplayString()}</p>
                         <p><strong>Type:</strong> ${typeLabel()}</p>

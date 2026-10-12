@@ -75,12 +75,14 @@ The application follows **hexagonal architecture** with clear separation between
 - Candidates come from `findByIdOrFingerprint`: same `externalId`, same fingerprint, or a stored `duplicates.id`
 - **Apartments**: fingerprint `"{type}-{city}-{street}-{subCategory}-{TX}"`; a listing is a duplicate if it has the same id, or the same fingerprint with a size within 5%
 - **Land** (`BuildingType.LAND`, `subCategory` = `LandSubCategory.name`): fingerprint `"land-{city}-{TX}-{area}"` (street and subtype dropped: often missing, and portals classify plots differently). A listing is a duplicate if it has the same id, is a known duplicate (`duplicates.id`), or is the same area **on another portal** with a price within 15% and no conflicting city part (`locality.district`, compared via `toComparableCityPart`). Within one portal a different id is never a duplicate
+- **Houses** (`BuildingType.HOUSE`, `subCategory` = `HouseSubCategory.name` or null, `sizeInM2` = usable area, `landSizeInM2` = plot area or null): fingerprint `"house-{city}-{TX}-{usable area}"` (plot left out: missing or a "1 m²" placeholder on some portals). Same rules as land, plus no conflicting street (`toComparableStreet`) and equal plot areas when both are known: houses in one development share area and price
 - A duplicate is stored in the original's `duplicates` array (with its `id`) when it comes from a new portal or is cheaper; otherwise it is dropped
 - New persisted fields must be nullable: the bson-kotlin codec ignores Kotlin defaults on decode
 
-**Scheduled Scraping**: `RealityScheduler` has two jobs sharing a mutex, both with `SKIP` concurrency:
+**Scheduled Scraping**: `RealityScheduler` has three jobs sharing a mutex, all with `SKIP` concurrency:
 - Apartments (`reality.scheduler.cron`, every 30 minutes 6-23h): SALE, then RENT; providers in parallel; up to 5 pages (22 items) per provider, stopping at the first page with nothing new
 - Land (`reality.scheduler.land-cron`, env `LAND_SCHEDULER_CRON`, default `"off"`): Prague building plots for sale; providers one after another (so a plot on two portals in one run is merged); every page is scanned (up to 12) because portals reorder by "bump"
+- Houses (`reality.scheduler.house-cron`, env `HOUSE_SCHEDULER_CRON`, default `"off"`): Prague houses for sale, same as land but up to 50 pages (~70 requests per run; iDNES pages take 6-16 s)
 - Random delays between requests (700-2500ms) to avoid detection
 - Cron values must be quoted; only `"off"`/`"disabled"` disable a job (a bare YAML `off` or `"-"` fails startup)
 
@@ -126,5 +128,5 @@ Observability: OpenTelemetry configured to export to Grafana Alloy (endpoint: `h
 - Security: `/api/real-estates/process` (POST, `?building=&transaction=&landSubCategory=`) requires ADMIN role, GET endpoints require USER role except `/api/real-estates/{id}` and `/api/statistics/market` (public)
 - `@RequireUserMatch` endpoints allow only the user whose id is in the path (ADMIN bypasses); notification repository operations are scoped by user id
 - Kotlin default values on JAX-RS resource params are ignored: every non-null query param needs `@DefaultValue`
-- Schedulers are configured via `reality.scheduler.cron` and `reality.scheduler.land-cron`
+- Schedulers are configured via `reality.scheduler.cron`, `reality.scheduler.land-cron` and `reality.scheduler.house-cron`
 - CORS configured for `https://reality.havasi.me` origin

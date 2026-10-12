@@ -52,7 +52,13 @@ internal class SrealityRealEstatesProvider(
             .results
             .also { Log.info("Sreality estates found size: ${it.size}") }
             .mapNotNull { estate ->
-                runCatching { if (type == BuildingType.LAND) estate.toLand(this, baseUrl) else estate.toApartment(this) }
+                runCatching {
+                    when (type) {
+                        BuildingType.LAND -> estate.toLand(this, baseUrl)
+                        BuildingType.HOUSE -> estate.toHouse(this, baseUrl)
+                        BuildingType.APARTMENT -> estate.toApartment(this)
+                    }
+                }
                     .onFailure { e -> Log.warn("Skipping Sreality estate ${estate.hashId}", e) }
                     .getOrNull()
             }

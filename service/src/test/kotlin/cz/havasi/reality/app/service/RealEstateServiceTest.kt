@@ -176,6 +176,90 @@ internal class RealEstateServiceTest {
     }
 
     @Nested
+    inner class HouseDedup {
+        @Test
+        fun `same house on another portal is stored as a duplicate with its id`() = runTest {
+            see(house("s1", SREALITY, 342.0, 23_890_000.0, "Suchdol", "Armádní", 769.0, "FAMILY_HOUSE"))
+            see(house("i1", IDNES, 342.0, 23_890_000.0, "Suchdol", "Armádní", 769.0))
+
+            assertEquals(listOf("s1"), repository.stored.map { it.id })
+            assertEquals(listOf("i1"), duplicateIdsOf("s1"))
+            assertEquals(769.0, repository.byId("s1")!!.landSizeInM2)
+        }
+
+        @Test
+        fun `street spelled with different case and diacritics still merges`() = runTest {
+            see(house("s1", SREALITY, 189.0, 33_137_600.0, "Horní Měcholupy", "U Hostivařského nádraží", 340.0))
+            see(house("i1", IDNES, 189.0, 33_137_600.0, "Horní Měcholupy", "U hostivarskeho nadrazi", 340.0))
+
+            assertEquals(listOf("i1"), duplicateIdsOf("s1"))
+        }
+
+        @Test
+        fun `one side without plot area or street merges`() = runTest {
+            see(house("s1", SREALITY, 474.0, 75_000_000.0, "Břevnov", "Zeyerova alej", 1_200.0))
+            see(house("i1", IDNES, 474.0, 75_000_000.0, "Břevnov", "Zeyerova alej", null))
+            see(house("b1", BEZREALITKY, 474.0, 74_000_000.0, "Břevnov", null, 1_200.0))
+
+            assertEquals(listOf("s1"), repository.stored.map { it.id })
+            assertEquals(listOf("i1", "b1"), duplicateIdsOf("s1"))
+        }
+
+        @Test
+        fun `development houses on different streets are not merged`() = runTest {
+            see(house("s1", SREALITY, 160.0, 19_450_000.0, "Satalice", "Hubačova", 251.0))
+            see(house("i1", IDNES, 160.0, 19_450_000.0, "Satalice", "Trabantská", 251.0))
+
+            assertEquals(listOf("s1", "i1"), repository.stored.map { it.id })
+        }
+
+        @Test
+        fun `different plot area is not merged`() = runTest {
+            see(house("s1", SREALITY, 200.0, 20_000_000.0, "Kunratice", "Ke Hrádku", 500.0))
+            see(house("i1", IDNES, 200.0, 20_000_000.0, "Kunratice", "Ke Hrádku", 650.0))
+
+            assertEquals(listOf("s1", "i1"), repository.stored.map { it.id })
+        }
+
+        @Test
+        fun `conflicting city part or a price gap over 15 percent is not merged`() = runTest {
+            see(house("s1", SREALITY, 136.0, 18_500_000.0, "Kyje"))
+            see(house("i1", IDNES, 136.0, 18_500_000.0, "Modřany"))
+            see(house("b1", BEZREALITKY, 136.0, 25_000_000.0, "Kyje"))
+
+            assertEquals(listOf("s1", "i1", "b1"), repository.stored.map { it.id })
+        }
+
+        @Test
+        fun `same house listed twice on one portal is saved twice`() = runTest {
+            see(house("s1", SREALITY, 392.0, 44_900_000.0, "Dolní Měcholupy", "Na Návsi", 1_068.0, "FAMILY_HOUSE"))
+            see(house("s2", SREALITY, 392.0, 44_900_000.0, "Dolní Měcholupy", "Na Návsi", 1_068.0, "VILLA"))
+
+            assertEquals(listOf("s1", "s2"), repository.stored.map { it.id })
+            assertEquals(listOf("s1", "s2"), fixture.notifiedIds)
+        }
+
+        @Test
+        fun `known duplicate seen again is neither saved nor notified`() = runTest {
+            see(house("s1", SREALITY, 342.0, 23_890_000.0, "Suchdol", "Armádní", 769.0))
+            see(house("i1", IDNES, 342.0, 23_890_000.0, "Suchdol", "Armádní", 769.0))
+            see(house("i1", IDNES, 342.0, 23_890_000.0, "Suchdol", "Armádní", 769.0))
+
+            assertEquals(listOf("s1"), repository.stored.map { it.id })
+            assertEquals(listOf("i1"), duplicateIdsOf("s1"))
+            assertEquals(2, fixture.notifiedIds.size)
+        }
+
+        @Test
+        fun `a house never merges with a plot of the same area`() = runTest {
+            see(land("s1", SREALITY, 500.0, 10_000_000.0))
+            see(house("i1", IDNES, 500.0, 10_000_000.0))
+
+            assertEquals(listOf("s1", "i1"), repository.stored.map { it.id })
+        }
+    }
+
+    @Nested
     inner class FetchLoop {
         @Test
         fun `land scans every page and stops at the first empty fetch`() = runTest {
@@ -199,6 +283,37 @@ internal class RealEstateServiceTest {
             assertEquals(12, provider.commands.size)
             assertEquals((0 until 12).map { it * 22 }, provider.commands.map { it.offset })
             assertTrue(provider.commands.all { it.type == BuildingType.LAND && it.landSubCategory == LandSubCategory.BUILDING_PLOT })
+        }
+
+        @Test
+        fun `houses scan every page, at most 50, without a land subtype`() = runTest {
+            val known = house("s1", SREALITY, 150.0, 15_000_000.0)
+            val provider = FakeProvider("sreality") { page -> if (page < 60) listOf(known) else emptyList() }
+            val fixture = RealEstateServiceFixture(listOf(provider))
+
+            fixture.service.fetchAndSaveRealEstate(BuildingType.HOUSE, TransactionType.SALE)
+
+            assertEquals(50, provider.commands.size)
+            assertTrue(provider.commands.all { it.type == BuildingType.HOUSE && it.landSubCategory == null })
+            assertEquals(listOf("s1"), fixture.notifiedIds)
+        }
+
+        @Test
+        fun `house providers run sequentially and merge a house listed on both in the same run`() = runTest {
+            val events = mutableListOf<String>()
+            val sreality = FakeProvider("sreality", events, 1_000) { page ->
+                if (page == 0) listOf(house("s1", SREALITY, 342.0, 23_890_000.0, "Suchdol", "Armádní", 769.0)) else emptyList()
+            }
+            val idnes = FakeProvider("idnes", events, 1_000) { page ->
+                if (page == 0) listOf(house("i1", IDNES, 342.0, 23_890_000.0, "Suchdol", "Armádní", 769.0)) else emptyList()
+            }
+            val fixture = RealEstateServiceFixture(listOf(sreality, idnes))
+
+            fixture.service.fetchAndSaveRealEstate(BuildingType.HOUSE, TransactionType.SALE)
+
+            assertTrue(events.indexOfLast { it.startsWith("sreality") } < events.indexOfFirst { it.startsWith("idnes") })
+            assertEquals(listOf("s1"), fixture.repository.stored.map { it.id })
+            assertEquals(listOf("i1"), fixture.repository.byId("s1")!!.duplicates.map { it.id })
         }
 
         @Test

@@ -12,6 +12,7 @@ public data class Apartment(
     val price: Double,
     val pricePerM2: Double?,
     val sizeInM2: Double,
+    val landSizeInM2: Double? = null, // HOUSE only: plot area; sizeInM2 is the usable area
     val currency: CurrencyType,
     val locality: Locality,
     val mainCategory: BuildingType,

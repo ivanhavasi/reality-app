@@ -6,7 +6,8 @@ import cz.havasi.reality.app.model.TransactionType
 import java.util.*
 import kotlin.math.roundToInt
 
-// land drops street and subtype: street is missing on 29–41% of plots and portals classify the same plot differently
+// land and houses drop street and subtype: street is often missing and portals classify the same property differently.
+// A house is keyed by usable area only: its plot area is missing or a "1 m²" placeholder on some portals
 public fun constructFingerprint(
     buildingType: BuildingType,
     locality: Locality,
@@ -16,7 +17,9 @@ public fun constructFingerprint(
 ): String = when (buildingType) {
     BuildingType.LAND ->
         "land-${locality.city}-${transactionType.name}-${checkNotNull(sizeInM2) { "Land fingerprint needs size" }.roundToInt()}"
-    else ->
+    BuildingType.HOUSE ->
+        "house-${locality.city}-${transactionType.name}-${checkNotNull(sizeInM2) { "House fingerprint needs size" }.roundToInt()}"
+    BuildingType.APARTMENT ->
         "${buildingType.name.lowercase(Locale.FRANCE)}-${locality.city}-${locality.street ?: ""}-$subCategory-${transactionType.name}"
 }
 // todo create a new fingerprint and hash it

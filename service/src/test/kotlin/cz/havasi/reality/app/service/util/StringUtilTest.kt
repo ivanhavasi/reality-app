@@ -23,4 +23,12 @@ internal class StringUtilTest {
         assertNull("  ".toComparableCityPart())
         assertNull((null as String?).toComparableCityPart())
     }
+
+    @Test
+    fun `toComparableStreet ignores case, diacritics and blanks`() {
+        assertEquals("u hostivarskeho nadrazi", "U Hostivařského nádraží".toComparableStreet())
+        assertEquals("u hostivarskeho nadrazi", " u hostivařského nádraží ".toComparableStreet())
+        assertNull(" ".toComparableStreet())
+        assertNull((null as String?).toComparableStreet())
+    }
 }

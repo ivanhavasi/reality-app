@@ -31,10 +31,21 @@ internal class FingerprintUtilTest {
             "apartment-Praha--3+1-RENT",
             constructFingerprint(BuildingType.APARTMENT, locality.copy(street = null), "3+1", TransactionType.RENT),
         )
+    }
+
+    @Test
+    fun `house fingerprint uses city, transaction and usable area only`() {
         assertEquals(
-            "house-Brno-Lidická-5+1-SALE",
-            constructFingerprint(BuildingType.HOUSE, locality.copy(city = "Brno", street = "Lidická"), "5+1", TransactionType.SALE),
+            "house-Praha-SALE-342",
+            constructFingerprint(BuildingType.HOUSE, locality, "VILLA", TransactionType.SALE, 342.0),
         )
+        assertEquals(
+            "house-Praha-SALE-342",
+            constructFingerprint(BuildingType.HOUSE, locality.copy(street = null, district = null), "", TransactionType.SALE, 341.6),
+        )
+        assertThrows<IllegalStateException> {
+            constructFingerprint(BuildingType.HOUSE, locality, "", TransactionType.SALE)
+        }
     }
 
     @Test

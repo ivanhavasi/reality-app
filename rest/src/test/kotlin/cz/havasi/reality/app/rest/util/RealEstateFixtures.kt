@@ -44,6 +44,19 @@ internal val APARTMENT = LAND_PLOT.copy(
     subCategory = "2+kk",
 )
 
+internal val HOUSE = LAND_PLOT.copy(
+    id = "h1",
+    fingerprint = "house-Praha-SALE-156",
+    name = "Prodej domu 156 m²",
+    sizeInM2 = 156.0,
+    landSizeInM2 = 1_296.0,
+    price = 18_900_000.0,
+    pricePerM2 = 121_154.0,
+    locality = Locality("Praha", "Horní Počernice", "K Odpočinku", null, null, null),
+    mainCategory = BuildingType.HOUSE,
+    subCategory = "FAMILY_HOUSE",
+)
+
 internal fun duplicate(price: Double) =
     ApartmentDuplicate(url = "https://example.com", price = price, pricePerM2 = null, provider = ProviderType.IDNES, id = "d$price")
 

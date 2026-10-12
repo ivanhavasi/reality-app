@@ -44,6 +44,17 @@ internal class RealityScheduler(
         Log.info("Scheduled land task finished")
     }
 
+    @Scheduled(cron = "{reality.scheduler.house-cron}", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
+    internal suspend fun scheduleHouseRetrieval() {
+        Log.info("Scheduled house task started")
+
+        waitForRandomInterval(300)
+        fetchMutex.withLock {
+            fetch(BuildingType.HOUSE, TransactionType.SALE)
+        }
+        Log.info("Scheduled house task finished")
+    }
+
     private suspend fun fetch(
         buildingType: BuildingType,
         transactionType: TransactionType,

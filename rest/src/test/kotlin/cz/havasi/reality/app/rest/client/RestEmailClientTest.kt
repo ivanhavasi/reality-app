@@ -10,6 +10,7 @@ import cz.havasi.reality.app.rest.client.model.MailjetEmail
 import cz.havasi.reality.app.rest.client.model.MailjetEmailWrapper
 import cz.havasi.reality.app.rest.client.model.MailjetEmailsWrapper
 import cz.havasi.reality.app.rest.util.APARTMENT
+import cz.havasi.reality.app.rest.util.HOUSE
 import cz.havasi.reality.app.rest.util.LAND_PLOT
 import cz.havasi.reality.app.rest.util.normalizeSpaces
 import kotlinx.coroutines.test.runTest
@@ -68,6 +69,28 @@ internal class RestEmailClientTest {
         assertContains(email.htmlPart, "<h1>Land Listing</h1>")
         assertContains(email.htmlPart, "<strong>Type:</strong> Building plot")
         assertContains(email.htmlPart.normalizeSpaces(), "<strong>Size:</strong> 1 200 m²")
+    }
+
+    @Test
+    fun `house email shows the plot next to the usable area`() = runTest {
+        val email = emailFor(HOUSE)
+
+        assertEquals(
+            "Family house 156 m², plot 1 296 m² for sale in K Odpočinku, Horní Počernice, Praha for 18 900 000 CZK",
+            email.subject.normalizeSpaces(),
+        )
+        assertContains(email.textPart, "House Listing")
+        assertContains(email.textPart.normalizeSpaces(), "Size: 156 m², plot 1 296 m²")
+        assertContains(email.htmlPart.normalizeSpaces(), "<strong>Size:</strong> 156 m², plot 1 296 m²")
+        listOf(email.subject, email.textPart, email.htmlPart).forEach { assertFalse(it.contains("null"), it) }
+    }
+
+    @Test
+    fun `house email without a known plot shows the usable area only`() = runTest {
+        val email = emailFor(HOUSE.copy(landSizeInM2 = null))
+
+        assertEquals("Family house 156 m² for sale in K Odpočinku, Horní Počernice, Praha for 18 900 000 CZK", email.subject.normalizeSpaces())
+        assertFalse(email.textPart.contains("plot"))
     }
 
     @Test

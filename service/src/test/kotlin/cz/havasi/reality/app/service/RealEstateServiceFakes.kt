@@ -65,6 +65,42 @@ internal fun land(
     )
 }
 
+internal fun house(
+    id: String,
+    provider: ProviderType,
+    size: Double,
+    price: Double,
+    district: String? = null,
+    street: String? = null,
+    landSize: Double? = null,
+    subCategory: String? = null,
+): Apartment {
+    val locality = Locality(
+        city = "Praha",
+        district = district,
+        street = street,
+        streetNumber = null,
+        latitude = null,
+        longitude = null,
+    )
+    return Apartment(
+        id = id,
+        fingerprint = constructFingerprint(BuildingType.HOUSE, locality, "", TransactionType.SALE, size),
+        name = "Prodej domu $size m²",
+        url = "https://example.com/$id",
+        price = price,
+        pricePerM2 = price / size,
+        sizeInM2 = size,
+        landSizeInM2 = landSize,
+        currency = CurrencyType.CZK,
+        locality = locality,
+        mainCategory = BuildingType.HOUSE,
+        subCategory = subCategory,
+        transactionType = TransactionType.SALE,
+        provider = provider,
+    )
+}
+
 internal fun apartment(
     id: String,
     provider: ProviderType,

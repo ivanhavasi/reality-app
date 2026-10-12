@@ -8,3 +8,6 @@ internal fun areDoublesEqualWithTolerance(a: Double, b: Double, tolerance: Doubl
 // building plots only: forests and meadows genuinely sell at 10–30 Kč/m²; the lower bound excludes price on request and 1 Kč placeholders
 public fun looksLikePricePerM2(price: Double, sizeInM2: Double): Boolean =
     price in 100.0..60_000.0 && price / sizeInM2 < 200
+
+// portals fill in "1 m²" when they don't know the plot area
+public fun Double.plotSizeOrNull(): Double? = takeIf { it > 1 }

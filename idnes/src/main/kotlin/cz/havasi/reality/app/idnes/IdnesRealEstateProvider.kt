@@ -79,6 +79,7 @@ internal class IdnesRealEstateProvider(
     private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         Jsoup.parse(this).select(".c-products__inner").mapNotNull {
             if (getRealEstatesCommand.type == BuildingType.LAND) return@mapNotNull it.toLand(getRealEstatesCommand)
+            if (getRealEstatesCommand.type == BuildingType.HOUSE) return@mapNotNull it.toHouse(getRealEstatesCommand)
             val linkElement = it.selectFirst("a.c-products__link")
             val titleElement = it.selectFirst(".c-products__title")
 
