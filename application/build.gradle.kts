@@ -25,6 +25,7 @@ dependencies {
 
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
+    testImplementation("io.quarkus:quarkus-test-security")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     testImplementation("org.testcontainers:testcontainers:1.20.6")
     testImplementation("io.quarkus:quarkus-mongodb-client")

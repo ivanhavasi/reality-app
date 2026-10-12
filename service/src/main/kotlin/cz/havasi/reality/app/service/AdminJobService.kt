@@ -28,6 +28,7 @@ public class AdminJobAlreadyRunningException : IllegalStateException("Another ad
 public class AdminJobService(
     private val realEstateService: RealEstateService,
     private val portalLock: PortalLock,
+    private val placeImportService: PlaceImportService,
 ) {
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO + ContextClassLoader(AdminJobService::class.java.classLoader),
@@ -36,7 +37,10 @@ public class AdminJobService(
 
     public fun recentJobs(): List<AdminJob> = synchronized(jobs) { jobs.reversed() }
 
-    public fun start(type: AdminJobType, buildingType: BuildingType, transactionType: TransactionType): AdminJob {
+    public fun start(type: AdminJobType, buildingType: BuildingType? = null, transactionType: TransactionType? = null): AdminJob {
+        require(type == AdminJobType.IMPORT_PLACES || (buildingType != null && transactionType != null)) {
+            "$type needs a building and a transaction type"
+        }
         val job = synchronized(jobs) {
             if (jobs.any { it.status == AdminJobStatus.WAITING || it.status == AdminJobStatus.RUNNING }) {
                 throw AdminJobAlreadyRunningException()
@@ -63,35 +67,49 @@ public class AdminJobService(
     }
 
     private suspend fun run(job: AdminJob) {
-        val landSubCategory = LandSubCategory.BUILDING_PLOT.takeIf { job.buildingType == BuildingType.LAND }
         try {
-            portalLock.mutex.withLock {
+            if (job.type == AdminJobType.IMPORT_PLACES) {
+                // OpenStreetMap, not the portals: no need to wait for a scheduled scrape
                 update(job.id) { it.copy(status = AdminJobStatus.RUNNING, startedAt = now()) }
-                when (job.type) {
-                    AdminJobType.SCRAPE -> {
-                        val saved = realEstateService.fetchAndSaveRealEstate(job.buildingType, job.transactionType, landSubCategory)
-                        update(job.id) { it.copy(savedListings = saved) }
+                placeImportService.importAll { progress ->
+                    update(job.id) {
+                        it.copy(placeCategoriesImported = progress.categoriesImported, placesImported = progress.placesImported)
                     }
-
-                    AdminJobType.BACKFILL_COORDINATES ->
-                        realEstateService.backfillCoordinates(job.buildingType, job.transactionType, landSubCategory) { progress ->
-                            update(job.id) {
-                                it.copy(
-                                    pagesScanned = progress.pagesScanned,
-                                    listingsSeen = progress.listingsSeen,
-                                    coordinatesFilled = progress.coordinatesFilled,
-                                    addressesToLocate = progress.addressesToLocate,
-                                    addressesChecked = progress.addressesChecked,
-                                    addressesLocated = progress.addressesLocated,
-                                )
-                            }
-                        }
                 }
+            } else {
+                portalLock.mutex.withLock { runOnPortals(job, job.buildingType!!, job.transactionType!!) }
             }
             update(job.id) { it.copy(status = AdminJobStatus.SUCCEEDED, finishedAt = now()) }
         } catch (e: Exception) {
-            Log.error("Admin job ${job.type} ${job.buildingType} ${job.transactionType} failed", e)
+            Log.error("Admin job ${job.type} ${job.buildingType ?: ""} ${job.transactionType ?: ""} failed", e)
             update(job.id) { it.copy(status = AdminJobStatus.FAILED, finishedAt = now(), error = e.message ?: e.javaClass.simpleName) }
+        }
+    }
+
+    private suspend fun runOnPortals(job: AdminJob, buildingType: BuildingType, transactionType: TransactionType) {
+        val landSubCategory = LandSubCategory.BUILDING_PLOT.takeIf { buildingType == BuildingType.LAND }
+        update(job.id) { it.copy(status = AdminJobStatus.RUNNING, startedAt = now()) }
+        when (job.type) {
+            AdminJobType.SCRAPE -> {
+                val saved = realEstateService.fetchAndSaveRealEstate(buildingType, transactionType, landSubCategory)
+                update(job.id) { it.copy(savedListings = saved) }
+            }
+
+            AdminJobType.BACKFILL_COORDINATES ->
+                realEstateService.backfillCoordinates(buildingType, transactionType, landSubCategory) { progress ->
+                    update(job.id) {
+                        it.copy(
+                            pagesScanned = progress.pagesScanned,
+                            listingsSeen = progress.listingsSeen,
+                            coordinatesFilled = progress.coordinatesFilled,
+                            addressesToLocate = progress.addressesToLocate,
+                            addressesChecked = progress.addressesChecked,
+                            addressesLocated = progress.addressesLocated,
+                        )
+                    }
+                }
+
+            AdminJobType.IMPORT_PLACES -> error("The places import doesn't use the portals")
         }
     }
 

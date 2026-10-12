@@ -7,4 +7,6 @@ internal object DatabaseNames {
     const val USER_NOTIFICATION_COLLECTION_NAME = "notifications"
     const val SENT_NOTIFICATION_COLLECTION_NAME = "sentNotifications"
     const val GEOCODING_CACHE_COLLECTION_NAME = "geocodingCache"
+    const val FAVORITE_COLLECTION_NAME = "favoriteListings"
+    const val PLACE_COLLECTION_NAME = "places"
 }

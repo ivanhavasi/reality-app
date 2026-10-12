@@ -4,6 +4,7 @@ import cz.havasi.reality.app.model.AdminJob
 import cz.havasi.reality.app.model.AdminJobStatus
 import cz.havasi.reality.app.model.AdminJobType
 import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.PlaceCategory
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.type.ProviderType.SREALITY
 import kotlinx.coroutines.delay
@@ -25,7 +26,12 @@ internal class AdminJobServiceTest {
             },
         ),
     )
-    private val jobs = AdminJobService(fixture.service, portalLock)
+    private val places = FakePlaceRepository()
+    private val jobs = AdminJobService(
+        fixture.service,
+        portalLock,
+        PlaceImportService(FakePlacesClient(onePlaceInEveryCategory()), places).apply { pauseBetweenCategoriesMillis = 0 },
+    )
 
     @AfterEach
     fun stop() = jobs.shutdown()
@@ -72,5 +78,18 @@ internal class AdminJobServiceTest {
         }
 
         assertEquals(AdminJobStatus.SUCCEEDED, awaitFinished(started.id).status)
+    }
+
+    @Test
+    fun `places import doesn't wait for the portals and reports what it imported`() = runBlocking {
+        val started = portalLock.mutex.withLock { jobs.start(AdminJobType.IMPORT_PLACES) }
+
+        val finished = awaitFinished(started.id)
+
+        assertEquals(AdminJobStatus.SUCCEEDED, finished.status)
+        assertEquals(null, finished.buildingType)
+        assertEquals(12, finished.placeCategoriesImported)
+        assertEquals(12, finished.placesImported)
+        assertEquals(PlaceCategory.entries.toSet(), places.stored.keys)
     }
 }

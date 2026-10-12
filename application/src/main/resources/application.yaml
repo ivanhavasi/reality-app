@@ -61,6 +61,11 @@ quarkus:
       url: "https://nominatim.openstreetmap.org"
       connect-timeout: 3000
       read-timeout: 10000
+    # a query may run for its 90 s server-side timeout before the answer starts
+    "overpass-api":
+      url: "https://overpass-api.de/api"
+      connect-timeout: 5000
+      read-timeout: 150000
   application:
     name: "reality-app"
 
@@ -74,3 +79,5 @@ reality:
     # must stay quoted: a bare `off` is read as boolean false and startup fails; "off"/"disabled" are the only disable values
     land-cron: "${LAND_SCHEDULER_CRON:off}"
     house-cron: "${HOUSE_SCHEDULER_CRON:off}"
+    # nearby places from OpenStreetMap, at 4:00 on the 1st of every month
+    places-cron: "${PLACES_SCHEDULER_CRON:0 0 4 1 * ?}"

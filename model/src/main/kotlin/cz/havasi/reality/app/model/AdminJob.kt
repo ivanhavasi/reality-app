@@ -7,6 +7,7 @@ import java.time.OffsetDateTime
 public enum class AdminJobType {
     SCRAPE,
     BACKFILL_COORDINATES,
+    IMPORT_PLACES,
 }
 
 @RegisterForReflection
@@ -21,8 +22,9 @@ public enum class AdminJobStatus {
 public data class AdminJob(
     val id: String,
     val type: AdminJobType,
-    val buildingType: BuildingType,
-    val transactionType: TransactionType,
+    // null for the places import, which isn't about one kind of listing
+    val buildingType: BuildingType?,
+    val transactionType: TransactionType?,
     val status: AdminJobStatus,
     val createdAt: OffsetDateTime,
     val startedAt: OffsetDateTime? = null,
@@ -36,5 +38,8 @@ public data class AdminJob(
     val addressesToLocate: Int = 0,
     val addressesChecked: Int = 0,
     val addressesLocated: Int = 0,
+    // places import
+    val placeCategoriesImported: Int = 0,
+    val placesImported: Int = 0,
     val error: String? = null,
 )

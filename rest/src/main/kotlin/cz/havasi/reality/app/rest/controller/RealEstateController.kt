@@ -1,7 +1,9 @@
 package cz.havasi.reality.app.rest.controller
 
 import cz.havasi.reality.app.model.Apartment
+import cz.havasi.reality.app.model.AreaPriceComparison
 import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.NearbyPlace
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.type.LandSubCategory
@@ -13,6 +15,8 @@ import cz.havasi.reality.app.rest.controller.model.RealEstateMapPoint
 import cz.havasi.reality.app.rest.controller.model.toMapPoint
 import cz.havasi.reality.app.rest.controller.util.wrapToNoContent
 import cz.havasi.reality.app.rest.controller.util.wrapToOk
+import cz.havasi.reality.app.service.AreaPriceService
+import cz.havasi.reality.app.service.NearbyPlacesService
 import cz.havasi.reality.app.service.RealEstateService
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.BadRequestException
@@ -30,6 +34,8 @@ import org.jboss.resteasy.reactive.RestResponse
 @Produces(MediaType.APPLICATION_JSON)
 internal open class RealEstateController(
     private val realEstateService: RealEstateService,
+    private val areaPriceService: AreaPriceService,
+    private val nearbyPlacesService: NearbyPlacesService,
 ) {
     @POST
     @RolesAllowed(ADMIN_ROLE)
@@ -107,6 +113,22 @@ internal open class RealEstateController(
     open suspend fun getRealEstateById(
         @PathParam("id") id: String,
     ): RestResponse<Apartment> = realEstateService.getById(id).wrapToOk()
+
+    // NOT SECURED EP, like the detail it belongs to; 204 when there are too few similar listings nearby
+    @GET
+    @Path("/{id}/area-price")
+    open suspend fun getAreaPriceComparison(
+        @PathParam("id") id: String,
+    ): RestResponse<AreaPriceComparison> =
+        areaPriceService.compare(realEstateService.getById(id))?.wrapToOk() ?: RestResponse.noContent()
+
+    // NOT SECURED EP, like the detail it belongs to; empty without coordinates or before places are imported
+    @GET
+    @Path("/{id}/nearby")
+    open suspend fun getNearbyPlaces(
+        @PathParam("id") id: String,
+    ): RestResponse<List<NearbyPlace>> =
+        nearbyPlacesService.find(realEstateService.getById(id)).wrapToOk()
 
     private fun findCommand(
         searchString: String?,

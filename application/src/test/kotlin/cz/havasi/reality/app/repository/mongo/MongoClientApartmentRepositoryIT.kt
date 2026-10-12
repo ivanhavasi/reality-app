@@ -2,17 +2,26 @@ package cz.havasi.reality.app.repository.mongo
 
 import cz.havasi.reality.app.AbstractIT
 import cz.havasi.reality.app.helper.ApartmentHelper.APARTMENT
+import cz.havasi.reality.app.helper.ApartmentHelper.APARTMENT_ENTITY
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.ApartmentDuplicate
+import cz.havasi.reality.app.model.AreaPrice
+import cz.havasi.reality.app.model.Coordinates
+import cz.havasi.reality.app.model.TransactionType
+import cz.havasi.reality.app.model.command.FindAreaPricesCommand
 import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.reality.app.model.util.Paging
 import cz.havasi.reality.app.model.type.ProviderType
 import io.quarkus.test.junit.QuarkusTest
+import io.smallrye.mutiny.coroutines.awaitSuspending
 import kotlinx.coroutines.test.runTest
+import org.bson.types.ObjectId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.OffsetDateTime
+import java.time.ZoneOffset.UTC
 
 @QuarkusTest
 internal class MongoClientApartmentRepositoryIT : AbstractIT() {
@@ -149,5 +158,52 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
         assertEquals(APARTMENT.locality.longitude, localityOf(APARTMENT.id).longitude)
         assertEquals(50.08, localityOf(withoutCoordinates.id).latitude)
         assertEquals(14.44, localityOf(withoutCoordinates.id).longitude)
+    }
+
+    @Test
+    fun `findAreaPrices returns recent similar listings in the box at their lowest price`() = runTest {
+        val near = APARTMENT.copy(
+            id = "area-near",
+            fingerprint = "area-near",
+            locality = APARTMENT.locality.copy(latitude = 50.08, longitude = 14.44),
+            pricePerM2 = 130_000.0,
+            duplicates = listOf(
+                ApartmentDuplicate(url = "https://example.com/cheaper", price = 7_440_000.0, pricePerM2 = 120_000.0, provider = ProviderType.BEZREALITKY),
+                ApartmentDuplicate(url = "https://example.com/on-request", price = 0.0, pricePerM2 = 0.0, provider = ProviderType.IDNES),
+            ),
+        )
+        val located = { id: String, latitude: Double, longitude: Double ->
+            near.copy(id = id, fingerprint = id, duplicates = emptyList(), locality = near.locality.copy(latitude = latitude, longitude = longitude))
+        }
+        apartmentRepository.save(near)
+        apartmentRepository.save(near.copy(id = "area-subject", fingerprint = "area-subject"))
+        apartmentRepository.save(located("area-north", 50.2, 14.44))
+        apartmentRepository.save(located("area-east", 50.08, 14.6))
+        apartmentRepository.save(located("area-rent", 50.08, 14.44).copy(transactionType = TransactionType.RENT))
+        apartmentRepository.save(located("area-large", 50.08, 14.44).copy(sizeInM2 = 200.0))
+        apartmentRepository.save(located("area-unpriced", 50.08, 14.44).copy(pricePerM2 = null))
+        apartmentCollection.insertOne(
+            APARTMENT_ENTITY.copy(
+                _id = ObjectId.get(),
+                externalId = "area-old",
+                fingerprint = "area-old",
+                locality = APARTMENT_ENTITY.locality.copy(latitude = 50.08, longitude = 14.44),
+            ),
+        ).awaitSuspending()
+
+        val found = apartmentRepository.findAreaPrices(
+            FindAreaPricesCommand(
+                buildingType = APARTMENT.mainCategory,
+                transactionType = TransactionType.SALE,
+                excludedId = "area-subject",
+                southWest = Coordinates(50.07, 14.43),
+                northEast = Coordinates(50.09, 14.45),
+                sizeMin = 40.0,
+                sizeMax = 90.0,
+                createdAfter = OffsetDateTime.now(UTC).minusMonths(12),
+            ),
+        )
+
+        assertEquals(listOf(AreaPrice(Coordinates(50.08, 14.44), 120_000.0)), found)
     }
 }

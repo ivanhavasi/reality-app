@@ -45,7 +45,12 @@ internal open class AdminJobController(
         @DefaultValue("SALE") @QueryParam("transaction") transaction: TransactionType,
     ): RestResponse<AdminJob> = start(AdminJobType.BACKFILL_COORDINATES, building, transaction)
 
-    private fun start(type: AdminJobType, building: BuildingType, transaction: TransactionType): RestResponse<AdminJob> =
+    // parks, shops, stops, schools and the like for the listing detail, from OpenStreetMap; also runs monthly by itself
+    @POST
+    @Path("/import-places")
+    open fun startPlacesImport(): RestResponse<AdminJob> = start(AdminJobType.IMPORT_PLACES, null, null)
+
+    private fun start(type: AdminJobType, building: BuildingType?, transaction: TransactionType?): RestResponse<AdminJob> =
         try {
             RestResponse.accepted(adminJobService.start(type, building, transaction))
         } catch (e: AdminJobAlreadyRunningException) {

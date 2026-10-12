@@ -6,16 +6,20 @@ import com.mongodb.client.model.BulkWriteOptions
 import com.mongodb.client.model.Field
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.InsertManyOptions
+import com.mongodb.client.model.Projections
 import com.mongodb.client.model.Sorts
 import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.Updates
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.ApartmentDuplicate
+import cz.havasi.reality.app.model.AreaPrice
 import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.Coordinates
 import cz.havasi.reality.app.model.CurrencyType
 import cz.havasi.reality.app.model.Locality
 import cz.havasi.reality.app.model.MarketStatistics
 import cz.havasi.reality.app.model.TransactionType
+import cz.havasi.reality.app.model.command.FindAreaPricesCommand
 import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.command.GetStatisticsCommand
 import cz.havasi.reality.app.model.command.GroupByDimension
@@ -38,6 +42,7 @@ import io.smallrye.mutiny.coroutines.awaitSuspending
 import jakarta.enterprise.context.ApplicationScoped
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import org.bson.Document
 import org.bson.conversions.Bson
@@ -152,9 +157,52 @@ public class MongoClientApartmentRepository(
             .map { it.toModel() }
             .toList()
 
+    override suspend fun findAreaPrices(command: FindAreaPricesCommand): List<AreaPrice> =
+        mongoCollection
+            .find(
+                Filters.and(
+                    Filters.eq("mainCategory", command.buildingType.name),
+                    Filters.eq("transactionType", command.transactionType.name),
+                    Filters.gte("locality.latitude", command.southWest.latitude),
+                    Filters.lte("locality.latitude", command.northEast.latitude),
+                    Filters.gte("locality.longitude", command.southWest.longitude),
+                    Filters.lte("locality.longitude", command.northEast.longitude),
+                    Filters.gte("sizeInM2", command.sizeMin),
+                    Filters.lte("sizeInM2", command.sizeMax),
+                    Filters.gte("createdAt", command.createdAfter),
+                    Filters.ne("externalId", command.excludedId),
+                ),
+                Document::class.java,
+                FindOptions().projection(
+                    Projections.fields(
+                        Projections.excludeId(),
+                        Projections.include("locality.latitude", "locality.longitude", "pricePerM2", "duplicates.pricePerM2"),
+                    ),
+                ),
+            )
+            .asFlow()
+            .mapNotNull { it.toAreaPrice() }
+            .toList()
+
+    private fun Document.toAreaPrice(): AreaPrice? {
+        val locality = get("locality", Document::class.java)
+        val latitude = (locality?.get("latitude") as? Number)?.toDouble() ?: return null
+        val longitude = (locality.get("longitude") as? Number)?.toDouble() ?: return null
+        val prices = listOf(get("pricePerM2")) + getList("duplicates", Document::class.java, emptyList()).map { it["pricePerM2"] }
+        val lowest = prices.mapNotNull { (it as? Number)?.toDouble() }.filter { it > 0 }.minOrNull() ?: return null
+        return AreaPrice(Coordinates(latitude, longitude), lowest)
+    }
+
     override suspend fun findAll(command: FindRealEstatesCommand): List<Apartment> =
         mongoCollection
             .find(createFindQuery(command), command.paging.toFindOptions())
+            .asFlow()
+            .map { it.toModel() }
+            .toList()
+
+    override suspend fun findByIds(ids: List<String>): List<Apartment> =
+        mongoCollection
+            .find(Filters.`in`("externalId", ids), ApartmentEntity::class.java)
             .asFlow()
             .map { it.toModel() }
             .toList()

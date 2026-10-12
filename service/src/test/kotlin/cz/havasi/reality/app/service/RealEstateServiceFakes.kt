@@ -1,6 +1,7 @@
 package cz.havasi.reality.app.service
 
 import cz.havasi.reality.app.model.Apartment
+import cz.havasi.reality.app.model.AreaPrice
 import cz.havasi.reality.app.model.BuildingType
 import cz.havasi.reality.app.model.Coordinates
 import cz.havasi.reality.app.model.CurrencyType
@@ -14,6 +15,7 @@ import cz.havasi.reality.app.model.StreetSegment
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.WebhookNotification
 import cz.havasi.reality.app.model.command.AddUserNotificationCommand
+import cz.havasi.reality.app.model.command.FindAreaPricesCommand
 import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.command.FindUserNotificationsForFilterCommand
 import cz.havasi.reality.app.model.command.GetRealEstatesCommand
@@ -181,11 +183,28 @@ internal class FakeApartmentRepository : ApartmentRepository {
 
     override suspend fun findAll(command: FindRealEstatesCommand): List<Apartment> = stored.toList()
 
+    override suspend fun findByIds(ids: List<String>): List<Apartment> = stored.filter { it.id in ids }
+
     override suspend fun findWithoutCoordinates(buildingType: BuildingType, transactionType: TransactionType): List<Apartment> =
         stored
             .filter { it.mainCategory == buildingType && it.transactionType == transactionType }
             .filter { it.locality.latitude == null && it.locality.street != null }
             .reversed()
+
+    // no creation dates here, so createdAfter is not applied
+    override suspend fun findAreaPrices(command: FindAreaPricesCommand): List<AreaPrice> =
+        stored
+            .filter { it.mainCategory == command.buildingType && it.transactionType == command.transactionType }
+            .filter { it.id != command.excludedId && it.sizeInM2 in command.sizeMin..command.sizeMax }
+            .mapNotNull { apartment ->
+                val latitude = apartment.locality.latitude ?: return@mapNotNull null
+                val longitude = apartment.locality.longitude ?: return@mapNotNull null
+                val lowest = (listOf(apartment.pricePerM2) + apartment.duplicates.map { it.pricePerM2 })
+                    .filterNotNull().filter { it > 0 }.minOrNull() ?: return@mapNotNull null
+                AreaPrice(Coordinates(latitude, longitude), lowest)
+            }
+            .filter { it.coordinates.latitude in command.southWest.latitude..command.northEast.latitude }
+            .filter { it.coordinates.longitude in command.southWest.longitude..command.northEast.longitude }
 
     override suspend fun existsByIdOrFingerprint(id: String, fingerprint: String): Boolean =
         findByIdOrFingerprint(id, fingerprint).isNotEmpty()
