@@ -9,6 +9,8 @@ import cz.havasi.reality.app.model.type.UserRole.Companion.ADMIN_ROLE
 import cz.havasi.reality.app.model.type.UserRole.Companion.USER_ROLE
 import cz.havasi.reality.app.model.util.Paging
 import cz.havasi.reality.app.model.util.SortDirection
+import cz.havasi.reality.app.rest.controller.model.RealEstateMapPoint
+import cz.havasi.reality.app.rest.controller.model.toMapPoint
 import cz.havasi.reality.app.rest.controller.util.wrapToNoContent
 import cz.havasi.reality.app.rest.controller.util.wrapToOk
 import cz.havasi.reality.app.service.RealEstateService
@@ -59,22 +61,44 @@ internal open class RealEstateController(
         @QueryParam("subCategory") subCategories: List<String>,
     ): RestResponse<List<Apartment>> =
         realEstateService.findRealEstates(
-            FindRealEstatesCommand(
-                searchString,
-                transaction.toTransactionType(),
-                building.toBuildingType(),
-                sizeMin,
-                sizeMax,
-                priceMin,
-                priceMax,
+            findCommand(
+                searchString, transaction, building, sizeMin, sizeMax, priceMin, priceMax, subCategories,
                 Paging(
                     offset = offset.coerceAtLeast(0),
                     limit = limit.coerceIn(10, 20),
                     sortDirection = sortDirection.toSortDirection(),
                 ),
-                subCategories,
             ),
         )
+            .wrapToOk()
+
+    // same filters as findRealEstates, but only listings with coordinates and only the fields a map pin needs
+    @GET
+    @Path("/map")
+    @RolesAllowed(USER_ROLE)
+    open suspend fun findRealEstatesForMap(
+        @DefaultValue("$MAX_MAP_POINTS") @QueryParam("limit") limit: Int,
+        @DefaultValue("DESC") @QueryParam("sortDirection") sortDirection: String,
+        @DefaultValue("SALE") @QueryParam("transaction") transaction: String,
+        @DefaultValue("APARTMENT") @QueryParam("building") building: String,
+        @DefaultValue("0") @QueryParam("sizeMin") sizeMin: Int,
+        @DefaultValue("1000000") @QueryParam("sizeMax") sizeMax: Int,
+        @DefaultValue("0") @QueryParam("priceMin") priceMin: Int,
+        @DefaultValue("1000000000") @QueryParam("priceMax") priceMax: Int,
+        @QueryParam("search") searchString: String? = null,
+        @QueryParam("subCategory") subCategories: List<String>,
+    ): RestResponse<List<RealEstateMapPoint>> =
+        realEstateService.findRealEstates(
+            findCommand(
+                searchString, transaction, building, sizeMin, sizeMax, priceMin, priceMax, subCategories,
+                Paging(
+                    limit = limit.coerceIn(1, MAX_MAP_POINTS),
+                    sortDirection = sortDirection.toSortDirection(),
+                ),
+                withCoordinates = true,
+            ),
+        )
+            .map { it.toMapPoint() }
             .wrapToOk()
 
     // NOT SECURED EP
@@ -83,6 +107,30 @@ internal open class RealEstateController(
     open suspend fun getRealEstateById(
         @PathParam("id") id: String,
     ): RestResponse<Apartment> = realEstateService.getById(id).wrapToOk()
+
+    private fun findCommand(
+        searchString: String?,
+        transaction: String,
+        building: String,
+        sizeMin: Int,
+        sizeMax: Int,
+        priceMin: Int,
+        priceMax: Int,
+        subCategories: List<String>,
+        paging: Paging,
+        withCoordinates: Boolean = false,
+    ) = FindRealEstatesCommand(
+        searchString,
+        transaction.toTransactionType(),
+        building.toBuildingType(),
+        sizeMin,
+        sizeMax,
+        priceMin,
+        priceMax,
+        paging,
+        subCategories,
+        withCoordinates,
+    )
 
     // an unfiltered land fetch can't be classified (Bezrealitky never reveals the subtype), and phase 1 scrapes building plots only
     private fun resolveLandSubCategory(buildingType: BuildingType, landSubCategory: String?): LandSubCategory? =
@@ -110,5 +158,10 @@ internal open class RealEstateController(
         "ASC" -> SortDirection.ASC
         "DESC" -> SortDirection.DESC
         else -> SortDirection.DESC
+    }
+
+    private companion object {
+        // ~300 bytes per point, so a full response stays around 150 kB
+        const val MAX_MAP_POINTS = 500
     }
 }

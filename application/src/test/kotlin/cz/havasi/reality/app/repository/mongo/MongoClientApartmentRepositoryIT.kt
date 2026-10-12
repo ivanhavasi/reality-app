@@ -3,7 +3,9 @@ package cz.havasi.reality.app.repository.mongo
 import cz.havasi.reality.app.AbstractIT
 import cz.havasi.reality.app.helper.ApartmentHelper.APARTMENT
 import cz.havasi.reality.app.model.ApartmentDuplicate
+import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.command.UpdateApartmentWithDuplicateCommand
+import cz.havasi.reality.app.model.util.Paging
 import cz.havasi.reality.app.model.type.ProviderType
 import io.quarkus.test.junit.QuarkusTest
 import kotlinx.coroutines.test.runTest
@@ -76,5 +78,32 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
 
         assertEquals(1, found?.duplicates?.size)
         assertEquals(duplicate, found?.duplicates?.get(0))
+    }
+
+    @Test
+    fun `findAll withCoordinates skips listings without coordinates`() = runTest {
+        val withoutCoordinates = APARTMENT.copy(
+            id = "65b9a3f5e1b2a3456789abce",
+            fingerprint = "no-coordinates",
+            locality = APARTMENT.locality.copy(latitude = null, longitude = null),
+        )
+        apartmentRepository.save(APARTMENT)
+        apartmentRepository.save(withoutCoordinates)
+        val command = FindRealEstatesCommand(
+            searchString = null,
+            transactionType = APARTMENT.transactionType,
+            buildingType = APARTMENT.mainCategory,
+            sizeMin = 0,
+            sizeMax = 1_000_000,
+            priceMin = 0,
+            priceMax = 1_000_000_000,
+            paging = Paging(),
+        )
+
+        val all = apartmentRepository.findAll(command)
+        val mappable = apartmentRepository.findAll(command.copy(withCoordinates = true))
+
+        assertEquals(2, all.size)
+        assertEquals(listOf(APARTMENT.id), mappable.map { it.id })
     }
 }

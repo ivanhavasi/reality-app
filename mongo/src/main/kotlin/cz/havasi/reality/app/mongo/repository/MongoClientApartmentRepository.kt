@@ -176,6 +176,10 @@ public class MongoClientApartmentRepository(
         if (subCategories.isNotEmpty()) {
             filters.add(Filters.`in`("subCategory", subCategories))
         }
+        if (withCoordinates) {
+            filters.add(Filters.ne("locality.latitude", null))
+            filters.add(Filters.ne("locality.longitude", null))
+        }
         return Filters.and(filters)
     }
 
