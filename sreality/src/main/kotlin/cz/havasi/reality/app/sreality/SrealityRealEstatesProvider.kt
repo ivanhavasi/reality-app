@@ -25,6 +25,8 @@ internal class SrealityRealEstatesProvider(
     @RestClient private val srealityApi: SrealityApi,
     @ConfigProperty(name = "quarkus.rest-client.sreality-api.url") private val baseUrl: String,
 ) : RealEstatesProvider {
+    override val providesCoordinates: Boolean = true
+
     override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         with(getRealEstatesCommand) {
             try {

@@ -2,6 +2,7 @@ package cz.havasi.reality.app.service
 
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.Coordinates
 import cz.havasi.reality.app.model.CurrencyType
 import cz.havasi.reality.app.model.DiscordWebhookNotification
 import cz.havasi.reality.app.model.EmailNotification
@@ -9,6 +10,7 @@ import cz.havasi.reality.app.model.Locality
 import cz.havasi.reality.app.model.MarketStatistics
 import cz.havasi.reality.app.model.Notification
 import cz.havasi.reality.app.model.NotificationFilter
+import cz.havasi.reality.app.model.StreetSegment
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.WebhookNotification
 import cz.havasi.reality.app.model.command.AddUserNotificationCommand
@@ -20,8 +22,10 @@ import cz.havasi.reality.app.model.command.UpdateApartmentWithDuplicateCommand
 import cz.havasi.reality.app.model.command.UpdateUserNotificationCommand
 import cz.havasi.reality.app.model.event.HandleNotificationsEvent
 import cz.havasi.reality.app.model.type.ProviderType
+import cz.havasi.reality.app.service.client.GeocodingClient
 import cz.havasi.reality.app.service.provider.RealEstatesProvider
 import cz.havasi.reality.app.service.repository.ApartmentRepository
+import cz.havasi.reality.app.service.repository.GeocodingCacheRepository
 import cz.havasi.reality.app.service.repository.UserNotificationRepository
 import cz.havasi.reality.app.service.util.constructFingerprint
 import jakarta.enterprise.event.Event
@@ -161,7 +165,27 @@ internal class FakeApartmentRepository : ApartmentRepository {
         }
     }
 
+    override suspend fun bulkUpdateLocations(apartments: List<Apartment>): Int =
+        apartments.count { apartment ->
+            val index = stored.indexOfFirst { it.id == apartment.id && it.locality.latitude == null }
+            if (index >= 0) {
+                stored[index] = stored[index].copy(
+                    locality = stored[index].locality.copy(
+                        latitude = apartment.locality.latitude,
+                        longitude = apartment.locality.longitude,
+                    ),
+                )
+            }
+            index >= 0
+        }
+
     override suspend fun findAll(command: FindRealEstatesCommand): List<Apartment> = stored.toList()
+
+    override suspend fun findWithoutCoordinates(buildingType: BuildingType, transactionType: TransactionType): List<Apartment> =
+        stored
+            .filter { it.mainCategory == buildingType && it.transactionType == transactionType }
+            .filter { it.locality.latitude == null && it.locality.street != null }
+            .reversed()
 
     override suspend fun existsByIdOrFingerprint(id: String, fingerprint: String): Boolean =
         findByIdOrFingerprint(id, fingerprint).isNotEmpty()
@@ -174,10 +198,36 @@ internal class FakeApartmentRepository : ApartmentRepository {
     override suspend fun getMarketStatistics(command: GetStatisticsCommand): List<MarketStatistics> = emptyList()
 }
 
+// answers only the streets it was given; every other street is unknown
+internal class FakeGeocodingClient(private val streets: Map<String, List<StreetSegment>> = emptyMap()) : GeocodingClient {
+    val asked = mutableListOf<String>()
+    var failing = false
+
+    override suspend fun findStreet(street: String, city: String): List<StreetSegment> {
+        asked += street
+        if (failing) error("geocoder down")
+        return streets[street].orEmpty()
+    }
+}
+
+internal class FakeGeocodingCache : GeocodingCacheRepository {
+    val streets = mutableMapOf<String, List<StreetSegment>>()
+
+    override suspend fun findStreet(key: String): List<StreetSegment>? = streets[key]
+
+    override suspend fun saveStreet(key: String, segments: List<StreetSegment>) {
+        streets[key] = segments
+    }
+}
+
+internal fun segment(latitude: Double, longitude: Double, description: String) =
+    StreetSegment(Coordinates(latitude, longitude), description)
+
 internal class FakeProvider(
     private val name: String,
     private val events: MutableList<String> = mutableListOf(),
     private val callDelayMillis: Long = 0,
+    override val providesCoordinates: Boolean = false,
     private val pages: (page: Int) -> List<Apartment>,
 ) : RealEstatesProvider {
     val commands = mutableListOf<GetRealEstatesCommand>()
@@ -236,8 +286,12 @@ internal class MatchEverythingNotificationRepository : UserNotificationRepositor
         listOf(notification)
 }
 
-internal class RealEstateServiceFixture(providers: List<RealEstatesProvider>) {
+internal class RealEstateServiceFixture(
+    providers: List<RealEstatesProvider>,
+    streets: Map<String, List<StreetSegment>> = emptyMap(),
+) {
     val repository = FakeApartmentRepository()
+    val geocoder = FakeGeocodingClient(streets)
     private val emailEvents = RecordingEvent<HandleNotificationsEvent<EmailNotification>>()
     val service = RealEstateService(
         apartmentRepository = repository,
@@ -248,6 +302,7 @@ internal class RealEstateServiceFixture(providers: List<RealEstatesProvider>) {
             RecordingEvent<HandleNotificationsEvent<DiscordWebhookNotification>>(),
         ),
         realEstateProviders = providers.toMutableList(),
+        addressLocator = AddressLocator(geocoder, FakeGeocodingCache()),
     )
 
     val notifiedIds: List<String> get() = emailEvents.fired.map { it.apartment.id }

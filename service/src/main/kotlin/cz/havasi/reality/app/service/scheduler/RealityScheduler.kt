@@ -3,20 +3,21 @@ package cz.havasi.reality.app.service.scheduler
 import cz.havasi.reality.app.model.BuildingType
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.type.LandSubCategory
+import cz.havasi.reality.app.service.PortalLock
 import cz.havasi.reality.app.service.RealEstateService
 import io.quarkus.logging.Log
 import io.quarkus.scheduler.Scheduled
 import jakarta.enterprise.context.ApplicationScoped
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 @ApplicationScoped
 internal class RealityScheduler(
     private val realEstateService: RealEstateService,
+    portalLock: PortalLock,
 ) {
-    // the jobs hit the same portals, so they never run at the same time
-    private val fetchMutex = Mutex()
+    // shared with admin jobs: everything that hits the portals runs one at a time
+    private val fetchMutex = portalLock.mutex
 
     @Scheduled(cron = "{reality.scheduler.cron}", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     internal suspend fun scheduleRealityRetrieval() {

@@ -9,3 +9,7 @@ quarkus:
       image-name: mongo:8.0.5
       port: 27017
     database: reality
+  # tests never call the real geocoder
+  rest-client:
+    "nominatim-api":
+      url: "http://localhost:1"

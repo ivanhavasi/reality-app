@@ -3,6 +3,7 @@ package cz.havasi.reality.app.service
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.ApartmentDuplicate
 import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.CoordinatesBackfillProgress
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.ApartmentsAndDuplicates
 import cz.havasi.reality.app.model.command.FindRealEstatesCommand
@@ -20,6 +21,7 @@ import io.quarkus.arc.All
 import io.quarkus.logging.Log
 import jakarta.enterprise.context.ApplicationScoped
 import kotlinx.coroutines.delay
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 @ApplicationScoped
@@ -27,22 +29,70 @@ public class RealEstateService(
     private val apartmentRepository: ApartmentRepository,
     private val userNotificationService: UserNotificationService,
     @All private val realEstateProviders: MutableList<RealEstatesProvider>,
+    private val addressLocator: AddressLocator,
 ) {
+    // returns how many listings were saved, new ones plus copies attached from another portal
     public suspend fun fetchAndSaveRealEstate(
         buildingType: BuildingType,
         transactionType: TransactionType,
         landSubCategory: LandSubCategory? = null,
-    ) {
+    ): Int {
+        val saved = AtomicInteger()
         // land and houses run providers one after another, so a property listed on two portals in the same run is merged, not stored twice
         if (buildingType != BuildingType.APARTMENT) {
             realEstateProviders.forEachSequentially(message = "Fetching and saving $buildingType") {
-                fetchAndSaveApartmentsForProvider(it, buildingType, transactionType, landSubCategory)
+                saved.addAndGet(fetchAndSaveApartmentsForProvider(it, buildingType, transactionType, landSubCategory))
             }
         } else {
             realEstateProviders.forEachAsync(message = "Fetching and saving apartments") {
-                fetchAndSaveApartmentsForProvider(it, buildingType, transactionType, landSubCategory)
+                saved.addAndGet(fetchAndSaveApartmentsForProvider(it, buildingType, transactionType, landSubCategory))
             }
         }
+        return saved.get()
+    }
+
+    // re-reads every page of the portals that send coordinates and fills them into stored listings that lack them,
+    // then locates the rest from their street address; nothing new is saved and nobody is notified, so it is safe to
+    // run over the whole catalogue
+    public suspend fun backfillCoordinates(
+        buildingType: BuildingType,
+        transactionType: TransactionType,
+        landSubCategory: LandSubCategory? = null,
+        onProgress: (CoordinatesBackfillProgress) -> Unit = {},
+    ): CoordinatesBackfillProgress {
+        var progress = CoordinatesBackfillProgress()
+        realEstateProviders.filter { it.providesCoordinates }.forEach { provider ->
+            for (page in 0 until MAX_BACKFILL_PAGES) {
+                val fetched = provider.getApartments(page * PAGE_SIZE, PAGE_SIZE, buildingType, transactionType, landSubCategory)
+                if (fetched.isEmpty()) {
+                    break
+                }
+                val updates = fetched.locationUpdatesForStoredListings()
+                val filled = if (updates.isEmpty()) 0 else apartmentRepository.bulkUpdateLocations(updates)
+                progress = progress.copy(
+                    pagesScanned = progress.pagesScanned + 1,
+                    listingsSeen = progress.listingsSeen + fetched.size,
+                    coordinatesFilled = progress.coordinatesFilled + filled,
+                )
+                onProgress(progress)
+                delay(Random.nextLong(700, 2500))
+            }
+        }
+
+        // iDNES and listings no longer online can't be re-read; newest first, so the ones people look at go first
+        val unlocated = apartmentRepository.findWithoutCoordinates(buildingType, transactionType)
+        progress = progress.copy(addressesToLocate = unlocated.size)
+        onProgress(progress)
+        unlocated.chunked(ADDRESS_BATCH_SIZE).forEach { batch ->
+            val located = addressLocator.withLocatedAddresses(batch).filter { it.locality.latitude != null }
+            val filled = if (located.isEmpty()) 0 else apartmentRepository.bulkUpdateLocations(located)
+            progress = progress.copy(
+                addressesChecked = progress.addressesChecked + batch.size,
+                addressesLocated = progress.addressesLocated + filled,
+            )
+            onProgress(progress)
+        }
+        return progress
     }
 
     public suspend fun findRealEstates(command: FindRealEstatesCommand): List<Apartment> =
@@ -57,25 +107,27 @@ public class RealEstateService(
         buildingType: BuildingType,
         transactionType: TransactionType,
         landSubCategory: LandSubCategory?,
-    ) {
-        val numberOfApartments = 22
+    ): Int {
         val maxCalls = when (buildingType) {
             BuildingType.APARTMENT -> 5
             BuildingType.LAND -> 12
             BuildingType.HOUSE -> 50 // Sreality lists ~820 Prague houses for sale: 38 pages
         }
+        var savedCount = 0
 
         for (i in 0 until maxCalls) {
             val fetched = provider
-                .getApartments(i * numberOfApartments, numberOfApartments, buildingType, transactionType, landSubCategory)
+                .getApartments(i * PAGE_SIZE, PAGE_SIZE, buildingType, transactionType, landSubCategory)
             if (fetched.isEmpty()) {
                 Log.debug("No more apartments to fetch for provider $provider")
                 break
             }
-            val saved = fetched
+            // before dedup, so a stored copy without coordinates can take them from this one
+            val saved = addressLocator.withLocatedAddresses(fetched)
                 .filterApartments()
                 .saveApartments()
                 .sendNotifications()
+            savedCount += saved.size
 
             // portals reorder by "bump", so new plots and houses can sit past the first page: they always scan every page
             if (saved.isEmpty() && buildingType == BuildingType.APARTMENT) {
@@ -84,6 +136,7 @@ public class RealEstateService(
             }
             delay(Random.nextLong(700, 2500))
         }
+        return savedCount
     }
 
     private suspend fun RealEstatesProvider.getApartments(
@@ -110,24 +163,40 @@ public class RealEstateService(
         // duplicates are saved after the whole page, so land and houses track them here: otherwise two listings of one
         // portal on the same page could both attach to the same property
         val pendingOriginals = mutableMapOf<String, Apartment>()
+        val locationUpdates = mutableMapOf<String, Apartment>()
 
         forEach {
             val originalApartment = findOriginalApartment(it, pendingOriginals)
             if (areApartmentsDuplicates(it, originalApartment)) {
-                if (shouldApartmentBeSavedAsDuplicate(it, originalApartment!!)) { // null-check- areApartmentsDuplicates
-                    val originalApartmentWithLocation = resolveLocationFromDuplicate(originalApartment, it)
+                val originalApartmentWithLocation = resolveLocationFromDuplicate(originalApartment!!, it) // null-check- areApartmentsDuplicates
+                if (shouldApartmentBeSavedAsDuplicate(it, originalApartment)) {
                     duplicates.add(UpdateApartmentWithDuplicateCommand(originalApartmentWithLocation, it.toDuplicate()))
                     if (it.mainCategory != BuildingType.APARTMENT) {
                         pendingOriginals[originalApartment.id] = originalApartment.addDuplicate(it.toDuplicate())
                     }
+                } else if (originalApartmentWithLocation !== originalApartment) {
+                    // a listing seen again (or a copy that isn't kept) can still bring the coordinates the stored one lacks
+                    locationUpdates.putIfAbsent(originalApartment.id, originalApartmentWithLocation)
                 }
             } else {
                 newApartments.add(it)
             }
         }
 
-        return ApartmentsAndDuplicates(newApartments, duplicates)
+        return ApartmentsAndDuplicates(newApartments, duplicates, locationUpdates.values.toList())
     }
+
+    private suspend fun List<Apartment>.locationUpdatesForStoredListings(): List<Apartment> =
+        filter { it.locality.latitude != null && it.locality.longitude != null }
+            .mapNotNull { listing ->
+                val originalApartment = findOriginalApartment(listing, emptyMap())
+                if (!areApartmentsDuplicates(listing, originalApartment)) {
+                    null
+                } else {
+                    resolveLocationFromDuplicate(originalApartment!!, listing).takeIf { it !== originalApartment }
+                }
+            }
+            .distinctBy { it.id }
 
     private fun resolveLocationFromDuplicate(
         originalApartment: Apartment,
@@ -227,6 +296,9 @@ public class RealEstateService(
         if (duplicates.isNotEmpty()) {
             apartmentRepository.bulkUpdateApartmentWithDuplicate(duplicates)
         }
+        if (locationUpdates.isNotEmpty()) {
+            apartmentRepository.bulkUpdateLocations(locationUpdates)
+        }
 
         apartments + duplicates.map { it.apartment.addDuplicate(it.duplicate) }
     }
@@ -246,3 +318,7 @@ public class RealEstateService(
 }
 
 private const val CROSS_PORTAL_PRICE_TOLERANCE = 0.15
+private const val PAGE_SIZE = 22
+// covers a portal's whole Prague catalogue of one type; for Sreality apartments it's the newest 2 200
+private const val MAX_BACKFILL_PAGES = 100
+private const val ADDRESS_BATCH_SIZE = 20

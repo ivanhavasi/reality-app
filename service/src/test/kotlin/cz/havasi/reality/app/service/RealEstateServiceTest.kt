@@ -425,4 +425,114 @@ internal class RealEstateServiceTest {
             assertEquals(listOf("s1"), fixture.notifiedIds)
         }
     }
+
+    @Nested
+    inner class Coordinates {
+        private fun Apartment.at(latitude: Double, longitude: Double) =
+            copy(locality = locality.copy(latitude = latitude, longitude = longitude))
+
+        private fun coordinatesOf(id: String) = repository.byId(id)!!.locality.let { it.latitude to it.longitude }
+
+        @Test
+        fun `listing seen again with coordinates gets them without a new notification`() = runTest {
+            see(apartment("b1", BEZREALITKY, 54.0, 8_000_000.0))
+            see(apartment("b1", BEZREALITKY, 54.0, 8_000_000.0).at(50.08, 14.44))
+
+            assertEquals(listOf("b1"), repository.stored.map { it.id })
+            assertEquals(50.08 to 14.44, coordinatesOf("b1"))
+            assertEquals(listOf("b1"), fixture.notifiedIds)
+        }
+
+        @Test
+        fun `copy that isn't kept still brings the coordinates`() = runTest {
+            see(apartment("b1", BEZREALITKY, 54.0, 8_000_000.0))
+            see(apartment("s1", SREALITY, 54.0, 8_200_000.0))
+            see(apartment("s2", SREALITY, 54.0, 8_200_000.0).at(50.08, 14.44))
+
+            assertEquals(listOf("s1"), duplicateIdsOf("b1"))
+            assertEquals(50.08 to 14.44, coordinatesOf("b1"))
+        }
+
+        @Test
+        fun `stored coordinates are never overwritten`() = runTest {
+            see(apartment("s1", SREALITY, 54.0, 8_000_000.0).at(50.08, 14.44))
+            see(apartment("s1", SREALITY, 54.0, 8_000_000.0).at(50.10, 14.50))
+            see(apartment("b1", BEZREALITKY, 54.0, 7_900_000.0).at(50.11, 14.51))
+
+            assertEquals(50.08 to 14.44, coordinatesOf("s1"))
+        }
+    }
+
+    @Nested
+    inner class CoordinatesBackfill {
+        private fun Apartment.at(latitude: Double, longitude: Double) =
+            copy(locality = locality.copy(latitude = latitude, longitude = longitude))
+
+        @Test
+        fun `fills missing coordinates only, saves nothing new and notifies nobody`() = runTest {
+            val withCoordinates = FakeProvider("bezrealitky", providesCoordinates = true) { page ->
+                if (page > 0) {
+                    emptyList()
+                } else {
+                    listOf(
+                        apartment("b1", BEZREALITKY, 54.0, 8_000_000.0).at(50.08, 14.44),
+                        apartment("b2", BEZREALITKY, 80.0, 9_000_000.0, street = "Korunní").at(50.07, 14.45),
+                        apartment("s1", SREALITY, 61.0, 7_000_000.0, street = "Vinohradská").at(50.10, 14.50),
+                    )
+                }
+            }
+            val withoutCoordinates = FakeProvider("idnes") { error("portals without coordinates are not re-read") }
+            val backfill = RealEstateServiceFixture(listOf(withCoordinates, withoutCoordinates))
+            backfill.repository.save(apartment("b1", BEZREALITKY, 54.0, 8_000_000.0))
+            backfill.repository.save(apartment("s1", SREALITY, 61.0, 7_000_000.0, street = "Vinohradská").at(50.08, 14.44))
+
+            val result = backfill.service.backfillCoordinates(BuildingType.APARTMENT, TransactionType.SALE)
+
+            assertEquals(1, result.pagesScanned)
+            assertEquals(3, result.listingsSeen)
+            assertEquals(1, result.coordinatesFilled)
+            assertEquals(listOf("b1", "s1"), backfill.repository.stored.map { it.id })
+            assertEquals(50.08, backfill.repository.byId("b1")!!.locality.latitude)
+            assertEquals(50.08, backfill.repository.byId("s1")!!.locality.latitude)
+            assertEquals(emptyList(), backfill.notifiedIds)
+        }
+
+        @Test
+        fun `listings no portal can re-read are located from their street`() = runTest {
+            val backfill = RealEstateServiceFixture(
+                providers = emptyList(),
+                streets = mapOf("Havlíčkova" to listOf(segment(50.0866, 14.4339, "Havlíčkova, Nové Město, Praha"))),
+            )
+            backfill.repository.save(apartment("i1", IDNES, 54.0, 8_000_000.0))
+            backfill.repository.save(apartment("i2", IDNES, 61.0, 7_000_000.0, street = "Neexistující"))
+
+            val result = backfill.service.backfillCoordinates(BuildingType.APARTMENT, TransactionType.SALE)
+
+            assertEquals(2, result.addressesToLocate)
+            assertEquals(2, result.addressesChecked)
+            assertEquals(1, result.addressesLocated)
+            assertEquals(50.0866, backfill.repository.byId("i1")!!.locality.latitude)
+            assertEquals(null, backfill.repository.byId("i2")!!.locality.latitude)
+        }
+    }
+
+    @Nested
+    inner class AddressLocation {
+        @Test
+        fun `new listing without coordinates is saved with its street located`() = runTest {
+            val located = RealEstateServiceFixture(
+                providers = listOf(
+                    FakeProvider("idnes") { page ->
+                        if (page == 0) listOf(apartment("i1", IDNES, 54.0, 8_000_000.0)) else emptyList()
+                    },
+                ),
+                streets = mapOf("Havlíčkova" to listOf(segment(50.0866, 14.4339, "Havlíčkova, Nové Město, Praha"))),
+            )
+
+            located.service.fetchAndSaveRealEstate(BuildingType.APARTMENT, TransactionType.SALE)
+
+            assertEquals(50.0866 to 14.4339, located.repository.byId("i1")!!.locality.let { it.latitude to it.longitude })
+            assertEquals(listOf("i1"), located.notifiedIds)
+        }
+    }
 }

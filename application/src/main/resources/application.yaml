@@ -57,6 +57,10 @@ quarkus:
       url: "https://discord.com"
       connect-timeout: 3000
       read-timeout: 5000
+    "nominatim-api":
+      url: "https://nominatim.openstreetmap.org"
+      connect-timeout: 3000
+      read-timeout: 10000
   application:
     name: "reality-app"
 

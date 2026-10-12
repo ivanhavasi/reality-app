@@ -114,6 +114,44 @@ public class MongoClientApartmentRepository(
         }
     }
 
+    // updatedAt stays untouched: it orders the listings, and filling in coordinates doesn't make one newer
+    override suspend fun bulkUpdateLocations(apartments: List<Apartment>): Int {
+        val bulkUpdates = apartments.map {
+            UpdateOneModel<ApartmentEntity>(
+                Filters.and(Filters.eq("externalId", it.id), Filters.eq("locality.latitude", null)),
+                Updates.combine(
+                    Updates.set("locality.latitude", it.locality.latitude),
+                    Updates.set("locality.longitude", it.locality.longitude),
+                ),
+            )
+        }
+        if (bulkUpdates.isEmpty()) {
+            return 0
+        }
+
+        return try {
+            mongoCollection.bulkWrite(bulkUpdates, BulkWriteOptions().ordered(false)).awaitSuspending().modifiedCount
+        } catch (e: Throwable) {
+            Log.error("Error while updating locations of apartments: ${apartments.map { it.id }}", e)
+            0
+        }
+    }
+
+    override suspend fun findWithoutCoordinates(buildingType: BuildingType, transactionType: TransactionType): List<Apartment> =
+        mongoCollection
+            .find(
+                Filters.and(
+                    Filters.eq("mainCategory", buildingType.name),
+                    Filters.eq("transactionType", transactionType.name),
+                    Filters.eq("locality.latitude", null),
+                    Filters.type("locality.street", "string"),
+                ),
+                FindOptions().sort(Document("updatedAt", -1)),
+            )
+            .asFlow()
+            .map { it.toModel() }
+            .toList()
+
     override suspend fun findAll(command: FindRealEstatesCommand): List<Apartment> =
         mongoCollection
             .find(createFindQuery(command), command.paging.toFindOptions())

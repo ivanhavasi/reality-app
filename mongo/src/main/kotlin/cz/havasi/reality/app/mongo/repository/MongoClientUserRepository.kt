@@ -1,5 +1,7 @@
 package cz.havasi.reality.app.mongo.repository
 
+import com.mongodb.ErrorCategory
+import com.mongodb.MongoWriteException
 import com.mongodb.client.model.Filters
 import cz.havasi.reality.app.model.User
 import cz.havasi.reality.app.model.command.CreateUserCommand
@@ -25,14 +27,21 @@ internal class MongoClientUserRepository(
     private val mongoCollection =
         reactiveMongoClient.getDatabase(DB_NAME).getCollection(USER_COLLECTION_NAME, UserEntity::class.java)
 
+    // a new user's first requests arrive in parallel and each tries to create them: the unique email index
+    // lets one insert win and the others return that user
     override suspend fun save(command: CreateUserCommand): String =
-        mongoCollection.insertOne(command.toEntity())
-            ?.awaitSuspending()
-            ?.insertedId
-            ?.asObjectId()
-            ?.value
-            ?.toHexString()
-            ?: throw error("User with email ${command.email} was not saved into mongo db")
+        try {
+            mongoCollection.insertOne(command.toEntity())
+                ?.awaitSuspending()
+                ?.insertedId
+                ?.asObjectId()
+                ?.value
+                ?.toHexString()
+                ?: throw error("User with email ${command.email} was not saved into mongo db")
+        } catch (e: MongoWriteException) {
+            if (e.error.category != ErrorCategory.DUPLICATE_KEY) throw e
+            getUserByEmailOrNull(command.email)?.id ?: throw e
+        }
 
     override suspend fun getUserById(id: String): User =
         mongoCollection.find(Filters.eq("_id", ObjectId(id)), UserEntity::class.java)

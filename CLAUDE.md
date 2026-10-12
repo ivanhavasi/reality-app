@@ -56,6 +56,8 @@ The application follows **hexagonal architecture** with clear separation between
 - **`sreality/`, `bezrealitky/`, `idnes/`** - Provider-specific implementations
   - Each implements `RealEstatesProvider` interface
   - Sreality uses REST API, Bezrealitky/iDNES use HTML scraping (Jsoup)
+  - Coordinates: Sreality sends GPS; Bezrealitky cards have none, so they are read from the page's embedded `__NEXT_DATA__` (apolloCache `Advert:<id>`, `BezrealitkyGps.kt`); iDNES list pages have none
+  - Anything still without coordinates (mostly iDNES) is located from its street by `AddressLocator`: OpenStreetMap Nominatim structured street search (`RestNominatimClient`, config key `nominatim-api`), at most one request per second, every answer including "unknown street" cached per street+city in the `geocodingCache` collection; a long street's piece in the listing's city part is used, otherwise the street's middle. Runs on every scrape before dedup and as phase 2 of the coordinates backfill. Street-level only: never the exact building
   - Convert provider-specific models to common `Apartment` model
 
 - **`application/`** - Main entry point
@@ -77,6 +79,7 @@ The application follows **hexagonal architecture** with clear separation between
 - **Land** (`BuildingType.LAND`, `subCategory` = `LandSubCategory.name`): fingerprint `"land-{city}-{TX}-{area}"` (street and subtype dropped: often missing, and portals classify plots differently). A listing is a duplicate if it has the same id, is a known duplicate (`duplicates.id`), or is the same area **on another portal** with a price within 15% and no conflicting city part (`locality.district`, compared via `toComparableCityPart`). Within one portal a different id is never a duplicate
 - **Houses** (`BuildingType.HOUSE`, `subCategory` = `HouseSubCategory.name` or null, `sizeInM2` = usable area, `landSizeInM2` = plot area or null): fingerprint `"house-{city}-{TX}-{usable area}"` (plot left out: missing or a "1 m²" placeholder on some portals). Same rules as land, plus no conflicting street (`toComparableStreet`) and equal plot areas when both are known: houses in one development share area and price
 - A duplicate is stored in the original's `duplicates` array (with its `id`) when it comes from a new portal or is cheaper; otherwise it is dropped
+- A stored listing without coordinates takes them from any match seen later, kept as a duplicate or not (`bulkUpdateLocations`: only fills missing coordinates, leaves `updatedAt` alone, never notifies)
 - New persisted fields must be nullable: the bson-kotlin codec ignores Kotlin defaults on decode
 
 **Scheduled Scraping**: `RealityScheduler` has three jobs sharing a mutex, all with `SKIP` concurrency:
@@ -126,6 +129,8 @@ Observability: OpenTelemetry configured to export to Grafana Alloy (endpoint: `h
 - Coroutines are used extensively - most service methods are `suspend fun`
 - MongoDB operations use reactive driver adapted with Kotlin coroutines (not blocking)
 - Security: `/api/real-estates/process` (POST, `?building=&transaction=&landSubCategory=`) requires ADMIN role, GET endpoints require USER role except `/api/real-estates/{id}` and `/api/statistics/market` (public)
+- Admin jobs (`/api/admin/jobs`, ADMIN only): `POST /scrape` and `POST /backfill-coordinates` (`?building=&transaction=`) return 202 and run in the background (`AdminJobService`, one at a time, kept in memory only); `GET` lists the last 20 with progress. They share `PortalLock` with `RealityScheduler`, so a job waits while a scheduled scrape runs. The backfill re-reads up to 100 pages of providers with `providesCoordinates` and only fills missing coordinates
+- Users: roles are `USER` (every new user) and `ADMIN` (set by hand in the DB). Users are created on first login by `MongoIdentityAugmentor`; `users.email` has a unique index (migration 007, which first merged existing duplicates into `usersMergedDuplicates`), and `save` returns the existing user when parallel first requests race
 - `@RequireUserMatch` endpoints allow only the user whose id is in the path (ADMIN bypasses); notification repository operations are scoped by user id
 - Kotlin default values on JAX-RS resource params are ignored: every non-null query param needs `@DefaultValue`
 - Schedulers are configured via `reality.scheduler.cron`, `reality.scheduler.land-cron` and `reality.scheduler.house-cron`

@@ -17,6 +17,9 @@ internal fun String?.toComparableCityPart(): String? =
 // "U Hostivařského nádraží" / "U hostivařského nádraží" -> "u hostivarskeho nadrazi"
 internal fun String?.toComparableStreet(): String? = this?.toComparable()
 
+// any free text, e.g. a geocoder's place name, so city parts can be looked up in it
+internal fun String?.toComparableText(): String? = this?.toComparable()
+
 private fun String.toComparable(): String? =
     trim().takeUnless { it.isBlank() }
         ?.let { Normalizer.normalize(it, Normalizer.Form.NFD).replace(COMBINING_MARKS, "").lowercase() }

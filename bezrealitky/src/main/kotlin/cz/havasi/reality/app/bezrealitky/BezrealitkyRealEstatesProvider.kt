@@ -11,12 +11,15 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.WebApplicationException
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import kotlin.math.roundToInt
 
 @ApplicationScoped
 internal class BezrealitkyRealEstatesProvider(
     @RestClient private val bezrealitkyApi: BezrealitkyApi,
 ) : RealEstatesProvider {
+    override val providesCoordinates: Boolean = true
+
     override suspend fun getRealEstates(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
         with(getRealEstatesCommand) {
             try {
@@ -53,9 +56,15 @@ internal class BezrealitkyRealEstatesProvider(
         )
             .parseDataFromResponse(this)
 
+    private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> {
+        val document = Jsoup.parse(this)
+        val gpsByAdvertId = document.parseGpsByAdvertId()
+        return document.parseCards(getRealEstatesCommand).map { it.withGps(gpsByAdvertId) }
+    }
+
     // ugly html parsing
-    private fun String.parseDataFromResponse(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
-        Jsoup.parse(this).select("article.PropertyCard_propertyCard__moO_5").mapNotNull {
+    private fun Document.parseCards(getRealEstatesCommand: GetRealEstatesCommand): List<Apartment> =
+        select("article.PropertyCard_propertyCard__moO_5").mapNotNull {
             if (getRealEstatesCommand.type == BuildingType.LAND) return@mapNotNull it.toLand(getRealEstatesCommand)
             if (getRealEstatesCommand.type == BuildingType.HOUSE) return@mapNotNull it.toHouse(getRealEstatesCommand)
             val url = it.selectFirst(".PropertyCard_propertyCardHeadline___diKI")?.selectFirst("a")?.attr("href")

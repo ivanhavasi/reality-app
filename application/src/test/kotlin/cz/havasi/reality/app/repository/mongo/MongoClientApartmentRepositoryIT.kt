@@ -2,6 +2,7 @@ package cz.havasi.reality.app.repository.mongo
 
 import cz.havasi.reality.app.AbstractIT
 import cz.havasi.reality.app.helper.ApartmentHelper.APARTMENT
+import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.ApartmentDuplicate
 import cz.havasi.reality.app.model.command.FindRealEstatesCommand
 import cz.havasi.reality.app.model.command.UpdateApartmentWithDuplicateCommand
@@ -105,5 +106,48 @@ internal class MongoClientApartmentRepositoryIT : AbstractIT() {
 
         assertEquals(2, all.size)
         assertEquals(listOf(APARTMENT.id), mappable.map { it.id })
+    }
+
+    @Test
+    fun `findWithoutCoordinates returns listings with a street but no coordinates`() = runTest {
+        val unlocated = APARTMENT.copy(
+            id = "65b9a3f5e1b2a3456789abcf",
+            fingerprint = "unlocated",
+            locality = APARTMENT.locality.copy(latitude = null, longitude = null),
+        )
+        val withoutStreet = unlocated.copy(
+            id = "65b9a3f5e1b2a3456789abd0",
+            fingerprint = "without-street",
+            locality = unlocated.locality.copy(street = null),
+        )
+        apartmentRepository.save(APARTMENT)
+        apartmentRepository.save(unlocated)
+        apartmentRepository.save(withoutStreet)
+
+        val found = apartmentRepository.findWithoutCoordinates(APARTMENT.mainCategory, APARTMENT.transactionType)
+
+        assertEquals(listOf(unlocated.id), found.map { it.id })
+    }
+
+    @Test
+    fun `bulkUpdateLocations fills missing coordinates and keeps existing ones`() = runTest {
+        val withoutCoordinates = APARTMENT.copy(
+            id = "65b9a3f5e1b2a3456789abce",
+            fingerprint = "no-coordinates",
+            locality = APARTMENT.locality.copy(latitude = null, longitude = null),
+        )
+        apartmentRepository.save(APARTMENT)
+        apartmentRepository.save(withoutCoordinates)
+        val moved = { apartment: Apartment -> apartment.copy(locality = apartment.locality.copy(latitude = 50.08, longitude = 14.44)) }
+
+        val filled = apartmentRepository.bulkUpdateLocations(listOf(moved(APARTMENT), moved(withoutCoordinates)))
+
+        assertEquals(1, filled)
+
+        suspend fun localityOf(id: String) = apartmentRepository.findByIdOrFingerprint(id, "").first { it.id == id }.locality
+        assertEquals(APARTMENT.locality.latitude, localityOf(APARTMENT.id).latitude)
+        assertEquals(APARTMENT.locality.longitude, localityOf(APARTMENT.id).longitude)
+        assertEquals(50.08, localityOf(withoutCoordinates.id).latitude)
+        assertEquals(14.44, localityOf(withoutCoordinates.id).longitude)
     }
 }
