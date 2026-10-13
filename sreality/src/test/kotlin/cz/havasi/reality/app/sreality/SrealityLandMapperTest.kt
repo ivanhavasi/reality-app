@@ -91,7 +91,7 @@ internal class SrealityLandMapperTest {
     }
 
     @Test
-    fun `one broken estate does not drop the page`() = runBlocking {
+    fun `land fetch asks for the land sub category`() = runBlocking {
         var sentCategorySub: String? = null
         val api = object : SrealityApi {
             override suspend fun searchEstates(

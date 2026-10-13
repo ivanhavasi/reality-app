@@ -7,11 +7,11 @@ import io.quarkus.runtime.annotations.RegisterForReflection
 internal data class SrealityApartment(
     @JsonProperty("hash_id") val hashId: String,
     @JsonProperty("advert_name") val name: String,
+    // the *_czk fields are converted to CZK even for listings posted in EUR, so price_currency_cb is not read
     @JsonProperty("price_czk") val price: Double,
     @JsonProperty("price_czk_m2") val pricePerM2: Double?,
     @JsonProperty("price_summary_czk") val priceSummary: Double? = null,
     @JsonProperty("price_unit_cb") val priceUnit: SrealityProperty? = null,
-    @JsonProperty("price_currency_cb") val currency: SrealityProperty,
     @JsonProperty("locality") val locality: SrealityLocality,
     @JsonProperty("category_main_cb") val mainCategory: SrealityProperty?,
     @JsonProperty("category_sub_cb") val subCategory: SrealityProperty?,

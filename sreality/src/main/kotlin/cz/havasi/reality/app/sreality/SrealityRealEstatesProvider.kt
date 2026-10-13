@@ -2,6 +2,7 @@ package cz.havasi.reality.app.sreality
 
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.CurrencyType
 import cz.havasi.reality.app.model.Locality
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.GetRealEstatesCommand
@@ -18,7 +19,9 @@ import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.inject.RestClient
 import org.jboss.resteasy.reactive.RestResponse
-import kotlin.math.roundToInt
+
+// size comes from the name: price_czk_m2 is 0 when the price is hidden (0 or 1 Kč)
+private val APARTMENT_AREA_REGEX = Regex("""(\d+)[\s\u00A0]*m²""")
 
 @ApplicationScoped
 internal class SrealityRealEstatesProvider(
@@ -83,8 +86,10 @@ internal class SrealityRealEstatesProvider(
         return entity ?: error("Sreality API returned empty body")
     }
 
-    private fun SrealityApartment.toApartment(command: GetRealEstatesCommand) =
-        Apartment(
+    private fun SrealityApartment.toApartment(command: GetRealEstatesCommand): Apartment? {
+        val size = APARTMENT_AREA_REGEX.find(name)?.groupValues?.get(1)?.toDouble()
+            ?: return null.also { Log.warn("Sreality apartment $hashId has no area in '$name', skipping") }
+        return Apartment(
             id = hashId,
             fingerprint = constructFingerprint(
                 BuildingType.APARTMENT,
@@ -96,8 +101,8 @@ internal class SrealityRealEstatesProvider(
             url = prepareUrl(),
             price = price,
             pricePerM2 = pricePerM2 ?: error("Sreality apartment $hashId has no price per m2"),
-            sizeInM2 = calculateSizeInM2(), // rounding
-            currency = currency.name.toCurrencyType(),
+            sizeInM2 = size,
+            currency = CurrencyType.CZK,
             locality = locality.toLocality(),
             mainCategory = mainCategory?.name?.toMainCategory()
                 ?: error("Sreality apartment $hashId has no main category"),
@@ -107,15 +112,7 @@ internal class SrealityRealEstatesProvider(
             images = images.map { "https:$it?fl=res,800,600,3|shr,,20|webp,60" },
             provider = ProviderType.SREALITY,
         )
-
-    private fun SrealityApartment.calculateSizeInM2() =
-        try {
-            val pricePerM2Updated = pricePerM2 ?: 1.0
-            (price / pricePerM2Updated).roundToInt().toDouble()
-        } catch (e: Exception) {
-            Log.error("Error while calculating size in m2 for apartment $hashId", e)
-            0.0
-        }
+    }
 
     private fun SrealityApartment.prepareUrl() =
         "$baseUrl/detail/prodej/byt/${subCategory?.name}/${locality.citySeoName ?: ""}-${locality.citypartSeoName ?: ""}-${locality.streetSeoName ?: ""}/$hashId"

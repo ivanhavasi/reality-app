@@ -2,6 +2,7 @@ package cz.havasi.reality.app.sreality
 
 import cz.havasi.reality.app.model.Apartment
 import cz.havasi.reality.app.model.BuildingType
+import cz.havasi.reality.app.model.CurrencyType
 import cz.havasi.reality.app.model.TransactionType
 import cz.havasi.reality.app.model.command.GetRealEstatesCommand
 import cz.havasi.reality.app.model.type.ProviderType
@@ -29,7 +30,7 @@ internal fun SrealityApartment.toHouse(command: GetRealEstatesCommand, baseUrl: 
         pricePerM2 = price / size,
         sizeInM2 = size,
         landSizeInM2 = PLOT_AREA_REGEX.find(name)?.groupValues?.get(1)?.toDouble()?.plotSizeOrNull(),
-        currency = currency.name.toCurrencyType(),
+        currency = CurrencyType.CZK,
         locality = houseLocality,
         mainCategory = BuildingType.HOUSE,
         subCategory = houseSubCategory?.canonical?.name,

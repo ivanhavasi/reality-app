@@ -60,16 +60,6 @@
       "price_currency_cb": {"name": "Kč", "value": 1},
       "locality": {"city": "Praha"},
       "advert_images": []
-    },
-    {
-      "hash_id": 5555,
-      "advert_name": "Prodej stavebního pozemku 700 m²",
-      "category_sub_cb": {"name": "Bydlení", "value": 19},
-      "price_czk": 5000000.0,
-      "price_czk_m2": null,
-      "price_currency_cb": {"name": "Zł", "value": 9},
-      "locality": {"city": "Praha"},
-      "advert_images": []
     }
   ],
   "meta_description": null

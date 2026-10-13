@@ -1,0 +1,81 @@
+{
+  "results": [
+    {
+      "hash_id": 3134165068,
+      "advert_name": "Pronájem bytu 4+kk 167 m²",
+      "category_main_cb": {"name": "Byty", "value": 1},
+      "category_sub_cb": {"name": "4+kk", "value": 8},
+      "category_type_cb": {"name": "Pronájem", "value": 2},
+      "price": 5777.0,
+      "price_czk": 140901.03,
+      "price_czk_m2": 844,
+      "price_summary_czk": 140901.03,
+      "price_unit_cb": {"name": "za měsíc", "value": 2},
+      "price_currency_cb": {"name": "EUR", "value": 3},
+      "locality": {
+        "city": "Praha", "citypart": "Vinohrady", "district": "Praha 3", "street": "Laubova", "streetnumber": null,
+        "city_seo_name": "praha", "citypart_seo_name": "vinohrady", "district_seo_name": "praha-3", "street_seo_name": "laubova",
+        "gps_lat": 50.0789804670077, "gps_lon": 14.4499923205764
+      },
+      "advert_images": ["//d18-a.sdn.cz/d_18/c_img_qG_B/nCR9NVflLBaEbFMlkIERGdx/027c.jpeg"]
+    },
+    {
+      "hash_id": 494669900,
+      "advert_name": "Prodej bytu atypický 135 m²",
+      "category_main_cb": {"name": "Byty", "value": 1},
+      "category_sub_cb": {"name": "Atypický", "value": 16},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 0.0,
+      "price_czk_m2": 0,
+      "price_summary_czk": 0.0,
+      "price_unit_cb": {"name": "za nemovitost", "value": 1},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Staré Město", "district": "Praha 1", "street": "U obecního dvora", "streetnumber": null,
+        "city_seo_name": "praha", "citypart_seo_name": "stare-mesto", "district_seo_name": "praha-1", "street_seo_name": "u-obecniho-dvora",
+        "gps_lat": 50.09125, "gps_lon": 14.423189
+      },
+      "advert_images": []
+    },
+    {
+      "hash_id": 623054924,
+      "advert_name": "Prodej bytu 4+1 101 m²",
+      "category_main_cb": {"name": "Byty", "value": 1},
+      "category_sub_cb": {"name": "4+1", "value": 9},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 1.0,
+      "price_czk_m2": 0,
+      "price_summary_czk": 1.0,
+      "price_unit_cb": {"name": "za nemovitost", "value": 1},
+      "price_currency_cb": {"name": "Kč", "value": 1},
+      "locality": {
+        "city": "Praha", "citypart": "Bubeneč", "district": "Praha 6", "street": "", "streetnumber": null,
+        "city_seo_name": "praha", "citypart_seo_name": "bubenec", "district_seo_name": "praha-6", "street_seo_name": null,
+        "gps_lat": 50.1011389690892, "gps_lon": 14.4001202368248
+      },
+      "advert_images": []
+    },
+    {
+      "hash_id": 6666,
+      "advert_name": "Prodej bytu 2+kk",
+      "category_main_cb": {"name": "Byty", "value": 1},
+      "category_sub_cb": {"name": "2+kk", "value": 4},
+      "category_type_cb": {"name": "Prodej", "value": 1},
+      "price_czk": 8000000.0,
+      "price_czk_m2": 160000,
+      "locality": {"city": "Praha"},
+      "advert_images": []
+    },
+    {
+      "hash_id": 5555,
+      "advert_name": "Pronájem bytu 2+kk 50 m²",
+      "category_main_cb": {"name": "Byty", "value": 1},
+      "category_sub_cb": {"name": "2+kk", "value": 4},
+      "category_type_cb": {"name": "Pronájem", "value": 2},
+      "price_czk": 25000.0,
+      "price_czk_m2": null,
+      "locality": {"city": "Praha"},
+      "advert_images": []
+    }
+  ]
+}

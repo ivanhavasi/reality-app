@@ -42,7 +42,7 @@ internal fun SrealityApartment.toLand(command: GetRealEstatesCommand, baseUrl: S
         price = price,
         pricePerM2 = price / size,
         sizeInM2 = size,
-        currency = currency.name.toCurrencyType(),
+        currency = CurrencyType.CZK,
         locality = landLocality,
         mainCategory = BuildingType.LAND,
         subCategory = subCategory?.name,
@@ -76,11 +76,4 @@ private fun SrealityApartment.prepareLandUrl(
     val transactionSlug = if (transaction == TransactionType.SALE) "prodej" else "pronajem"
     val subSlug = (landSubCategory ?: SrealityLandSubCategory.BUILDING_PLOT).detailSlug
     return "$baseUrl/detail/$transactionSlug/pozemek/$subSlug/${locality.citySeoName ?: ""}-${locality.citypartSeoName ?: ""}-${locality.streetSeoName ?: ""}/$hashId"
-}
-
-internal fun String.toCurrencyType() = when (this) {
-    "Kč" -> CurrencyType.CZK
-    "€" -> CurrencyType.EUR
-    "$" -> CurrencyType.USD
-    else -> error("Unknown currency type: $this")
 }
