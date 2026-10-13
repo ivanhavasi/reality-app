@@ -56,6 +56,7 @@ The application follows **hexagonal architecture** with clear separation between
 - **`sreality/`, `bezrealitky/`, `idnes/`** - Provider-specific implementations
   - Each implements `RealEstatesProvider` interface
   - Sreality uses REST API, Bezrealitky/iDNES use HTML scraping (Jsoup)
+  - `locality.district` is the city part ("Karlín") on every portal; Sreality apartments stored before October 2026 have the numbered district ("Praha 8") instead
   - Coordinates: Sreality sends GPS; Bezrealitky cards have none, so they are read from the page's embedded `__NEXT_DATA__` (apolloCache `Advert:<id>`, `BezrealitkyGps.kt`); iDNES list pages have none
   - Anything still without coordinates (mostly iDNES) is located from its street by `AddressLocator`: OpenStreetMap Nominatim structured street search (`RestNominatimClient`, config key `nominatim-api`), at most one request per second, every answer including "unknown street" cached per street+city in the `geocodingCache` collection; a long street's piece in the listing's city part is used, otherwise the street's middle. Runs on every scrape before dedup and as phase 2 of the coordinates backfill. Street-level only: never the exact building
   - Convert provider-specific models to common `Apartment` model

@@ -405,6 +405,7 @@ public class MongoClientApartmentRepository(
                 Accumulators.avg("avgPrice", "\$lowestPrice"),
                 Accumulators.avg("avgPricePerM2", "\$lowestPricePerM2"),
                 Accumulators.avg("avgSize", "\$sizeInM2"),
+                Accumulators.avg("avgLandSize", "\$landSizeInM2"),
                 Accumulators.min("minPrice", "\$lowestPrice"),
                 Accumulators.max("maxPrice", "\$lowestPrice"),
                 Accumulators.sum("count", 1),
@@ -440,12 +441,23 @@ public class MongoClientApartmentRepository(
         // Data quality filters - exclude invalid/outlier data
         filters.add(Filters.gt("price", 0.0))  // Exclude properties with price <= 0
         filters.add(Filters.gt("sizeInM2", 5.0))  // Exclude properties with size <= 5 m²
-        val maxSize = if (command.buildingType == BuildingType.LAND) 1_000_000.0 else 10_000.0
-        filters.add(Filters.lt("sizeInM2", maxSize))  // Exclude extreme outliers; plots are legitimately larger than 10,000 m²
+        filters.add(maxSizeFilter(command.buildingType))
         filters.add(Filters.gt("pricePerM2", 0.0))  // Exclude properties with pricePerM2 <= 0
 
         return if (filters.isEmpty()) Document() else Filters.and(filters)
     }
+
+    // excludes extreme outliers; plots are legitimately larger than 10,000 m², so without a type the cap is per listing
+    private fun maxSizeFilter(buildingType: BuildingType?): Bson =
+        when (buildingType) {
+            BuildingType.LAND -> Filters.lt("sizeInM2", MAX_LAND_SIZE)
+            null -> Filters.or(
+                Filters.and(Filters.eq("mainCategory", BuildingType.LAND.name), Filters.lt("sizeInM2", MAX_LAND_SIZE)),
+                Filters.and(Filters.ne("mainCategory", BuildingType.LAND.name), Filters.lt("sizeInM2", MAX_BUILDING_SIZE)),
+            )
+
+            else -> Filters.lt("sizeInM2", MAX_BUILDING_SIZE)
+        }
 
     private fun createGroupId(command: GetStatisticsCommand): Document {
         val groupId = Document()
@@ -534,9 +546,15 @@ public class MongoClientApartmentRepository(
             avgPrice = this.getDouble("avgPrice"),
             avgPricePerM2 = this.get("avgPricePerM2") as? Double,
             avgSize = this.getDouble("avgSize"),
+            avgLandSize = this.get("avgLandSize") as? Double,
             minPrice = this.getDouble("minPrice"),
             maxPrice = this.getDouble("maxPrice"),
             count = this.getInteger("count", 0).toLong(),
         )
+    }
+
+    private companion object {
+        const val MAX_BUILDING_SIZE = 10_000.0
+        const val MAX_LAND_SIZE = 1_000_000.0
     }
 }

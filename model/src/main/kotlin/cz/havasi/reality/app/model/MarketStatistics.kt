@@ -9,6 +9,7 @@ public data class MarketStatistics(
     val avgPrice: Double,
     val avgPricePerM2: Double?,
     val avgSize: Double,
+    val avgLandSize: Double?, // HOUSE only: plot area
     val minPrice: Double,
     val maxPrice: Double,
     val count: Long,

@@ -120,10 +120,11 @@ internal class SrealityRealEstatesProvider(
     private fun SrealityApartment.prepareUrl() =
         "$baseUrl/detail/prodej/byt/${subCategory?.name}/${locality.citySeoName ?: ""}-${locality.citypartSeoName ?: ""}-${locality.streetSeoName ?: ""}/$hashId"
 
+    // the city part ("Kyje") like the other portals; "Praha 9" only when Sreality leaves it out
     private fun SrealityLocality.toLocality() =
         Locality(
             city = city,
-            district = district,
+            district = citypart?.ifBlank { null } ?: district,
             street = street,
             streetNumber = streetNumber,
             latitude = latitude,
