@@ -431,7 +431,7 @@ public class MongoClientApartmentRepository(
         command.city?.let { filters.add(Filters.eq("locality.city", it)) }
         command.district?.let { filters.add(Filters.eq("locality.district", it)) }
         command.buildingType?.let { filters.add(Filters.eq("mainCategory", it.name)) }
-        command.subCategory?.let { filters.add(Filters.eq("subCategory", it)) }
+        if (command.subCategories.isNotEmpty()) filters.add(Filters.`in`("subCategory", command.subCategories))
         command.transactionType?.let { filters.add(Filters.eq("transactionType", it.name)) }
         command.sizeMin?.let { filters.add(Filters.gte("sizeInM2", it)) }
         command.sizeMax?.let { filters.add(Filters.lte("sizeInM2", it)) }

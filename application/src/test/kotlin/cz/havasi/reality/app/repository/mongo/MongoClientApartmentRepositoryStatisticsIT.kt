@@ -38,13 +38,17 @@ internal class MongoClientApartmentRepositoryStatisticsIT : AbstractIT() {
         subCategory = "BUILDING_PLOT",
     )
 
-    private fun command(buildingType: BuildingType?, groupBy: Set<GroupByDimension> = emptySet()): GetStatisticsCommand {
+    private fun command(
+        buildingType: BuildingType?,
+        groupBy: Set<GroupByDimension> = emptySet(),
+        subCategories: List<String> = emptyList(),
+    ): GetStatisticsCommand {
         val now = OffsetDateTime.now(UTC)
         return GetStatisticsCommand(
             city = null,
             district = null,
             buildingType = buildingType,
-            subCategory = null,
+            subCategories = subCategories,
             transactionType = TransactionType.SALE,
             sizeMin = null,
             sizeMax = null,
@@ -85,5 +89,34 @@ internal class MongoClientApartmentRepositoryStatisticsIT : AbstractIT() {
             mapOf("APARTMENT" to 1L, "HOUSE" to 1L, "LAND" to 1L),
             byType.associate { it.grouping["buildingType"] to it.count },
         )
+    }
+
+    @Test
+    fun `statistics combine the selected layouts`() = runTest {
+        val twoKk = APARTMENT.copy(
+            id = "2kk",
+            fingerprint = "2kk",
+            subCategory = "2+kk",
+            sizeInM2 = 50.0,
+            price = 6_000_000.0,
+            pricePerM2 = 120_000.0,
+        )
+        val twoOne = APARTMENT.copy(
+            id = "21",
+            fingerprint = "21",
+            subCategory = "2+1",
+            sizeInM2 = 60.0,
+            price = 6_000_000.0,
+            pricePerM2 = 100_000.0,
+        )
+        apartmentRepository.saveAll(listOf(APARTMENT, twoKk, twoOne))
+
+        val combined = apartmentRepository.getMarketStatistics(
+            command(BuildingType.APARTMENT, subCategories = listOf("2+kk", "2+1")),
+        ).single()
+
+        assertEquals(2, combined.count)
+        assertEquals(55.0, combined.avgSize)
+        assertEquals(110_000.0, combined.avgPricePerM2)
     }
 }

@@ -66,6 +66,10 @@ quarkus:
       url: "https://overpass-api.de/api"
       connect-timeout: 5000
       read-timeout: 150000
+    "google-oauth-api":
+      url: "https://oauth2.googleapis.com"
+      connect-timeout: 3000
+      read-timeout: 5000
   application:
     name: "reality-app"
 
@@ -74,6 +78,9 @@ reality:
     auth:
       username: ${MAILJET_USERNAME:}
       password: ${MAILJET_PASSWORD:}
+  # exchanges the browser's sign-in code for a refresh token, so sessions outlive Google's one-hour access token
+  google:
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
   scheduler:
     cron: "0 */30 6-23 * * ?"
     # must stay quoted: a bare `off` is read as boolean false and startup fails; "off"/"disabled" are the only disable values

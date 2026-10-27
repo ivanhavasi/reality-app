@@ -8,7 +8,7 @@ public data class GetStatisticsCommand(
     val city: String?,
     val district: String?,
     val buildingType: BuildingType?,
-    val subCategory: String?,
+    val subCategories: List<String>,
     val transactionType: TransactionType?,
     val sizeMin: Double?,
     val sizeMax: Double?,

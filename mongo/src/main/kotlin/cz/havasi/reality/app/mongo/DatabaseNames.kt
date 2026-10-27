@@ -9,4 +9,5 @@ internal object DatabaseNames {
     const val GEOCODING_CACHE_COLLECTION_NAME = "geocodingCache"
     const val FAVORITE_COLLECTION_NAME = "favoriteListings"
     const val PLACE_COLLECTION_NAME = "places"
+    const val GOOGLE_REFRESH_TOKEN_COLLECTION_NAME = "googleRefreshTokens"
 }
